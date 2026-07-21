@@ -1,0 +1,111 @@
+"""
+Swappable model client interfaces.
+
+Every ML-backed capability the agents need is defined as a Protocol here.
+Concrete implementations can be:
+  - Mock*Client: deterministic, no network calls -- used in unit tests and
+    local dev without API keys/GPU
+  - HFInferenceClient: calls HuggingFace Inference Endpoints / local
+    transformers pipelines for Token Classification, Zero-Shot
+    Classification, Feature Extraction, Sentence Similarity, Text Ranking
+  - AnthropicLLMClient / OpenAILLMClient: for QA/summarization/fix generation
+
+This indirection is what lets the classification model, the reranker, or the
+generation model be swapped later without touching agent logic.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Protocol
+
+
+@dataclass
+class ClassificationResult:
+    label: str  # e.g. CWE-89
+    score: float
+
+
+class ZeroShotClassifier(Protocol):
+    def classify(self, text: str, candidate_labels: list[str]) -> list[ClassificationResult]: ...
+
+
+class TokenClassifier(Protocol):
+    def find_spans(self, code: str) -> list[tuple[int, int, str, float]]:
+        """Returns (start_line, end_line, label, confidence) tuples."""
+        ...
+
+
+class EmbeddingClient(Protocol):
+    def embed(self, texts: list[str]) -> list[list[float]]: ...
+
+
+class Reranker(Protocol):
+    def rerank(self, query: str, documents: list[str]) -> list[float]:
+        """Returns a relevance score per document, same order as input."""
+        ...
+
+
+class GenerationClient(Protocol):
+    def generate(self, system_prompt: str, user_content: str, *, max_tokens: int = 1024) -> str: ...
+
+
+# ---------------------------------------------------------------------------
+# Mock implementations -- deterministic, offline, used for tests/local dev.
+# ---------------------------------------------------------------------------
+
+_KNOWN_VULN_KEYWORDS = {
+    "execute(": ("CWE-89", "sql_injection"),
+    "cursor.execute": ("CWE-89", "sql_injection"),
+    "innerHTML": ("CWE-79", "xss"),
+    "eval(": ("CWE-95", "unsafe_eval"),
+    "subprocess.call": ("CWE-78", "command_injection"),
+    "os.system": ("CWE-78", "command_injection"),
+    "pickle.loads": ("CWE-502", "unsafe_deserialization"),
+    "requests.get(url": ("CWE-918", "ssrf"),
+}
+
+
+class MockZeroShotClassifier:
+    def classify(self, text: str, candidate_labels: list[str]) -> list[ClassificationResult]:
+        results = []
+        lowered = text.lower()
+        for label in candidate_labels:
+            score = 0.85 if label.lower().replace("_", " ") in lowered.replace("_", " ") else 0.1
+            results.append(ClassificationResult(label=label, score=score))
+        return sorted(results, key=lambda r: r.score, reverse=True)
+
+
+class MockTokenClassifier:
+    def find_spans(self, code: str) -> list[tuple[int, int, str, float]]:
+        spans = []
+        for i, line in enumerate(code.splitlines(), start=1):
+            for keyword, (cwe, _) in _KNOWN_VULN_KEYWORDS.items():
+                if keyword in line:
+                    spans.append((i, i, cwe, 0.9))
+        return spans
+
+
+class MockEmbeddingClient:
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        # Deterministic pseudo-embedding via character codes, purely for
+        # exercising the retrieval pipeline shape in tests -- not semantically meaningful.
+        return [[float(sum(ord(c) for c in t) % 997) / 997.0] * 8 for t in texts]
+
+
+class MockReranker:
+    def rerank(self, query: str, documents: list[str]) -> list[float]:
+        query_words = set(query.lower().split())
+        scores = []
+        for doc in documents:
+            doc_words = set(doc.lower().split())
+            overlap = len(query_words & doc_words)
+            scores.append(overlap / max(len(query_words), 1))
+        return scores
+
+
+class MockGenerationClient:
+    def generate(self, system_prompt: str, user_content: str, *, max_tokens: int = 1024) -> str:
+        return (
+            "[MOCK GENERATION -- replace with AnthropicLLMClient/OpenAILLMClient]\n"
+            f"Would respond to: {user_content[:120]}..."
+        )

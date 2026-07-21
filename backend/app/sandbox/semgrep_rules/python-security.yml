@@ -1,0 +1,79 @@
+rules:
+  - id: sql-injection-string-concat
+    languages: [python]
+    severity: ERROR
+    message: >-
+      Possible SQL injection: query string is built via concatenation with a
+      variable instead of a parameterized query. Use a parameterized query
+      (e.g. cursor.execute(query, (param,))) instead.
+    metadata:
+      cwe: "CWE-89: SQL Injection"
+      owasp: "A03:2021 - Injection"
+    patterns:
+      - pattern-either:
+          - pattern: $CURSOR.execute("..." + $VAR)
+          - pattern: $CURSOR.execute("..." + $VAR + "...")
+          - pattern: $CURSOR.execute(f"...{$VAR}...")
+
+  - id: subprocess-shell-true
+    languages: [python]
+    severity: ERROR
+    message: >-
+      subprocess call with shell=True identified -- if any part of the
+      command is influenced by external input, this allows command
+      injection via shell metacharacters. Prefer shell=False with an
+      argument list.
+    metadata:
+      cwe: "CWE-78: OS Command Injection"
+      owasp: "A03:2021 - Injection"
+    patterns:
+      - pattern-either:
+          - pattern: subprocess.call($CMD, shell=True, ...)
+          - pattern: subprocess.run($CMD, shell=True, ...)
+          - pattern: subprocess.Popen($CMD, shell=True, ...)
+
+  - id: pickle-loads-untrusted
+    languages: [python]
+    severity: ERROR
+    message: >-
+      pickle.loads() can execute arbitrary code as a side effect of
+      deserializing attacker-controlled bytes. Use a data-only format
+      (json.loads) for untrusted input.
+    metadata:
+      cwe: "CWE-502: Deserialization of Untrusted Data"
+    patterns:
+      - pattern: pickle.loads(...)
+
+  - id: yaml-load-unsafe
+    languages: [python]
+    severity: WARNING
+    message: >-
+      yaml.load() without a Loader argument can instantiate arbitrary
+      Python objects from the input. Use yaml.safe_load() instead.
+    metadata:
+      cwe: "CWE-502: Deserialization of Untrusted Data"
+    patterns:
+      - pattern: yaml.load($DATA)
+
+  - id: hardcoded-secret-assignment
+    languages: [python]
+    severity: WARNING
+    message: >-
+      Possible hardcoded credential. Load secrets from an environment
+      variable or a secrets manager instead of embedding them in source.
+    metadata:
+      cwe: "CWE-798: Use of Hard-coded Credentials"
+    patterns:
+      - pattern-regex: "(?i)(password|secret|api_key|token)\\s*=\\s*[\"'][A-Za-z0-9_\\-]{8,}[\"']"
+
+  - id: eval-on-input
+    languages: [python]
+    severity: ERROR
+    message: >-
+      eval() on a value that may originate from external input allows
+      arbitrary code execution. Use ast.literal_eval for literals or
+      json.loads for structured data instead.
+    metadata:
+      cwe: "CWE-95: Eval Injection"
+    patterns:
+      - pattern: eval(...)

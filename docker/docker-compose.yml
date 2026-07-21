@@ -1,0 +1,96 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: sentinel
+      POSTGRES_PASSWORD: sentinel
+      POSTGRES_DB: sentinelreview
+    ports:
+      - "5433:5432"
+    volumes:
+      - sentinel_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentinel -d sentinelreview"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: postgresql+psycopg://sentinel:sentinel@db:5432/sentinelreview
+      REDIS_URL: redis://redis:6379/0
+      ENVIRONMENT: development
+    ports:
+      - "8010:8000"
+    volumes:
+      - ../backend:/app/backend
+      - ../scripts:/app/scripts
+      - ../evaluation:/app/evaluation
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: postgresql+psycopg://sentinel:sentinel@db:5432/sentinelreview
+      REDIS_URL: redis://redis:6379/0
+      ENVIRONMENT: development
+    volumes:
+      - ../backend:/app/backend
+    # Same image as `backend`, different command: actually processes
+    # jobs webhooks.py enqueues (app/jobs/queue.py's "sentinelreview-reviews"
+    # queue) instead of serving HTTP. Without this service, webhooks enqueue
+    # real jobs into real Redis correctly (verified in
+    # tests/test_queue_integration.py) but nothing ever pops them.
+    command: ["rq", "worker", "sentinelreview-reviews", "--url", "redis://redis:6379/0"]
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      # This is what the BROWSER uses (fetch() runs on your host machine,
+      # not inside the frontend container), so it must be the host-mapped
+      # port ("localhost:8010" via the "8010:8000" mapping above) -- NOT
+      # the Docker-internal service name "backend", which only resolves
+      # between containers on the compose network, not from your browser.
+      VITE_API_BASE_URL: http://localhost:8010
+    ports:
+      - "5183:5173"
+    volumes:
+      - ../frontend/src:/app/src
+      - ../frontend/index.html:/app/index.html
+
+volumes:
+  sentinel_pgdata:

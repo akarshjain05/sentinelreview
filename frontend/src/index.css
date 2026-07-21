@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+/*
+  SentinelReview design tokens.
+
+  Direction: a SOC/control-room console, not a consumer app -- this is a
+  security scanning tool, so the visual language leans technical and
+  data-dense rather than warm/spacious. The signature choice: severity
+  (critical/high/medium/low) IS the accent color system, not a decorative
+  badge bolted onto a neutral palette -- the color itself carries real
+  information about risk, which is the one thing this tool exists to
+  communicate.
+*/
+@theme {
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  --color-bg: #0b1215;
+  --color-surface: #141b1f;
+  --color-surface-raised: #1a2227;
+  --color-border: #232d32;
+  --color-border-strong: #2f3b41;
+
+  --color-text: #e8edef;
+  --color-text-muted: #8a9ba3;
+  --color-text-faint: #5c6b72;
+
+  --color-scan: #4fd1c5;
+  --color-scan-dim: #2c5f5a;
+
+  --color-critical: #ff5470;
+  --color-high: #ff9f5a;
+  --color-medium: #f5d76e;
+  --color-low: #6fcf97;
+  --color-info: #6e96b3;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+code, .font-mono-data {
+  font-family: var(--font-mono);
+}
+
+/* Respect reduced-motion for the scan-sweep signature element. */
+@media (prefers-reduced-motion: reduce) {
+  .scan-sweep {
+    animation: none !important;
+  }
+}
+
+@keyframes scan-sweep {
+  0% { transform: translateX(-100%); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+.scan-sweep {
+  animation: scan-sweep 3.5s ease-in-out infinite;
+}
