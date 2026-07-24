@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import { useApiFetch } from "../api/useApiFetch";
 import { EmptyState, ErrorState, LoadingState } from "../components/Layout";
@@ -25,15 +25,32 @@ function formatRelativeTime(iso: string | null): string {
 }
 
 export function ReviewsListPage() {
-  const state = useApiFetch(() => api.listReviews());
+  const [searchParams] = useSearchParams();
+  const repo = searchParams.get("repo") || undefined;
+  const state = useApiFetch(() => api.listReviews(repo), [repo]);
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="font-display text-2xl font-semibold">Reviews</h1>
-        <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-          Every pull request SentinelReview has scanned, newest first.
-        </p>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-semibold">Reviews</h1>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+            Every pull request SentinelReview has scanned, newest first.
+          </p>
+        </div>
+        {repo && (
+          <div className="flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 text-xs text-[var(--color-text)]">
+            <span>Filtered by repo:</span>
+            <span className="font-mono-data font-semibold">{repo}</span>
+            <Link
+              to="/"
+              className="ml-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+              title="Clear filter"
+            >
+              &times;
+            </Link>
+          </div>
+        )}
       </div>
 
       {state.status === "loading" && <LoadingState label="Loading reviews" />}

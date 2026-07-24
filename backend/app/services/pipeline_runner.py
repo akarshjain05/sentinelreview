@@ -57,6 +57,7 @@ def run_review_with_observability(
 
     final_state: dict = {}
     total_latency_ms = 0
+    total_cost_usd = 0.0
 
     try:
         for step_output in graph.stream(state):
@@ -77,9 +78,12 @@ def run_review_with_observability(
                     output_summary=_summarize_update(node_name, partial_update),
                     latency_ms=latency_ms,
                     succeeded=True,
+                    tokens_used=partial_update.get("tokens_used", 0),
+                    cost_usd=partial_update.get("cost_usd", 0.0),
                 )
                 db.add(run)
                 total_latency_ms += latency_ms
+                total_cost_usd += partial_update.get("cost_usd", 0.0)
                 final_state.update(partial_update)
         db.commit()
 
@@ -156,6 +160,7 @@ def run_review_with_observability(
 
         review.status = ReviewStatus.COMPLETED
         review.total_latency_ms = total_latency_ms
+        review.total_cost_usd = total_cost_usd
         db.commit()
 
     except Exception as e:

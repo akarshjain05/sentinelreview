@@ -104,3 +104,5 @@ class ReviewState(BaseModel):
     security_flags: list[SecurityFlag] = Field(default_factory=list)
     errors: list[str] = Field(default_factory=list)
     retry_counts: dict[str, int] = Field(default_factory=dict)
+    tokens_used: int = 0
+    cost_usd: float = 0.0

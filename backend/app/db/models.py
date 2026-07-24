@@ -71,6 +71,8 @@ class Installation(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
     github_installation_id: Mapped[int] = mapped_column(Integer, unique=True, index=True)
     account_login: Mapped[str] = mapped_column(String, index=True)
+    notify_on_findings: Mapped[bool] = mapped_column(Boolean, default=True)
+    notify_email: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     repositories: Mapped[list["Repository"]] = relationship(back_populates="installation")
@@ -91,6 +93,9 @@ class Repository(Base):
     full_name: Mapped[str] = mapped_column(String, index=True)  # e.g. "owner/repo"
     default_branch: Mapped[str] = mapped_column(String, default="main")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    scan_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    auto_patch_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    min_severity_to_report: Mapped[Severity] = mapped_column(SAEnum(Severity), default=Severity.MEDIUM)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     installation: Mapped["Installation"] = relationship(back_populates="repositories")

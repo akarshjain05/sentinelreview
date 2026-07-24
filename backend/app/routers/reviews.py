@@ -44,22 +44,26 @@ def _resolve_citations(db: Session, cited_document_ids: str | None) -> list[dict
 
 @router.get("")
 def list_reviews(
+    repo: str | None = None,
     db: Session = Depends(get_db),
     user: dict = Depends(get_current_user),
 ) -> list[dict]:
     """Reviews newest-first, with enough summary data for a list view without N+1 detail fetches."""
     installations = user.get("installations", [])
     
-    reviews = (
+    query = (
         db.query(Review)
         .join(Review.pull_request)
         .join(PullRequest.repository)
         .join(Repository.installation)
         .filter(Installation.github_installation_id.in_(installations))
         .options(joinedload(Review.pull_request).joinedload(PullRequest.repository))
-        .order_by(Review.started_at.desc().nullslast())
-        .all()
     )
+    
+    if repo:
+        query = query.filter(Repository.full_name == repo)
+        
+    reviews = query.order_by(Review.started_at.desc().nullslast()).all()
     out = []
     for review in reviews:
         pr = review.pull_request

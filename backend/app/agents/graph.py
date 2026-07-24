@@ -26,7 +26,10 @@ from app.agents.model_clients import (
     MockGenerationClient,
     MockZeroShotClassifier,
     ZeroShotClassifier,
+    LiteLLMClient,
+    LiteLLMClassifier,
 )
+from app.core.config import get_settings
 from app.agents.state import (
     Finding,
     KnowledgeSnippet,
@@ -157,10 +160,23 @@ def build_graph(
     HFInferenceClient / AnthropicLLMClient can be dropped in without
     touching any node logic.
     """
-    zero_shot = zero_shot or MockZeroShotClassifier()
+    settings = get_settings()
+    if settings.openai_api_key or settings.anthropic_api_key or settings.gemini_api_key:
+        if settings.openai_api_key:
+            model = "gpt-4o-mini"
+        elif settings.anthropic_api_key:
+            model = "claude-3-5-sonnet-20240620"
+        else:
+            model = "gemini/gemini-1.5-flash"
+            
+        zero_shot = zero_shot or LiteLLMClassifier(model=model)
+        generator = generator or LiteLLMClient(model=model)
+    else:
+        zero_shot = zero_shot or MockZeroShotClassifier()
+        generator = generator or MockGenerationClient()
+        
     static_analyzers = static_analyzers or {"bandit": BanditAnalyzer(), "semgrep": SemgrepAnalyzer()}
     knowledge_index = knowledge_index or TfidfKnowledgeIndex.from_seed_corpus()
-    generator = generator or MockGenerationClient()
 
     # ---- Node implementations -------------------------------------------------
 
@@ -277,8 +293,12 @@ def build_graph(
         assert_tool_allowed("classification", "token_classify")
 
         refined: list[Finding] = []
+        total_tokens = 0
+        total_cost = 0.0
         for finding in state.raw_analyzer_findings:
-            classifications = zero_shot.classify(finding.code_snippet, CWE_CANDIDATE_LABELS)
+            classifications, tokens, cost = zero_shot.classify(finding.code_snippet, CWE_CANDIDATE_LABELS)
+            total_tokens += tokens
+            total_cost += cost
             scores_by_label = {c.label: c.score for c in classifications}
 
             # This is the fix: look up the classifier's confidence for the
@@ -333,12 +353,14 @@ def build_graph(
                     }
                 )
             )
-        return {"findings": refined}
+        return {"findings": refined, "tokens_used": total_tokens, "cost_usd": total_cost}
 
     def fix_suggestion_node(state: ReviewState) -> dict:
         assert_tool_allowed("fix_suggestion", "generate_patch")
 
         suggestions: list[PatchSuggestion] = []
+        total_tokens = 0
+        total_cost = 0.0
         for idx, finding in enumerate(state.findings):
             if not finding.cited_document_ids:
                 # Guardrail: never generate a fix that isn't grounded in at
@@ -347,22 +369,24 @@ def build_graph(
             citation_context = "\n".join(
                 s.text for s in state.retrieved_knowledge if s.document_id in finding.cited_document_ids
             )
-            reasoning = generator.generate(
+            result = generator.generate(
                 system_prompt=(
                     "You are a security patch generator. Only suggest fixes grounded in the "
                     "provided reference material. Never invent vulnerabilities or citations."
                 ),
                 user_content=f"Finding: {finding.explanation}\nReferences:\n{citation_context}",
             )
+            total_tokens += result.tokens
+            total_cost += result.cost
             suggestions.append(
                 PatchSuggestion(
                     finding_index=idx,
                     diff=f"# proposed patch for {finding.file_path}:{finding.start_line} ({finding.vulnerability_type})",
-                    reasoning=reasoning,
+                    reasoning=result.content,
                     cited_document_ids=finding.cited_document_ids,
                 )
             )
-        return {"patch_suggestions": suggestions}
+        return {"patch_suggestions": suggestions, "tokens_used": total_tokens, "cost_usd": total_cost}
 
     def verification_node(state: ReviewState) -> dict:
         assert_tool_allowed("verification", "apply_patch_sandboxed")

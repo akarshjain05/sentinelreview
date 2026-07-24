@@ -17,6 +17,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Protocol
+import litellm
+from litellm import completion, completion_cost
+
+@dataclass
+class GenerationResult:
+    content: str
+    tokens: int
+    cost: float
 
 
 @dataclass
@@ -26,7 +34,7 @@ class ClassificationResult:
 
 
 class ZeroShotClassifier(Protocol):
-    def classify(self, text: str, candidate_labels: list[str]) -> list[ClassificationResult]: ...
+    def classify(self, text: str, candidate_labels: list[str]) -> tuple[list[ClassificationResult], int, float]: ...
 
 
 class TokenClassifier(Protocol):
@@ -46,7 +54,7 @@ class Reranker(Protocol):
 
 
 class GenerationClient(Protocol):
-    def generate(self, system_prompt: str, user_content: str, *, max_tokens: int = 1024) -> str: ...
+    def generate(self, system_prompt: str, user_content: str, *, max_tokens: int = 1024) -> GenerationResult: ...
 
 
 # ---------------------------------------------------------------------------
@@ -66,13 +74,13 @@ _KNOWN_VULN_KEYWORDS = {
 
 
 class MockZeroShotClassifier:
-    def classify(self, text: str, candidate_labels: list[str]) -> list[ClassificationResult]:
+    def classify(self, text: str, candidate_labels: list[str]) -> tuple[list[ClassificationResult], int, float]:
         results = []
         lowered = text.lower()
         for label in candidate_labels:
             score = 0.85 if label.lower().replace("_", " ") in lowered.replace("_", " ") else 0.1
             results.append(ClassificationResult(label=label, score=score))
-        return sorted(results, key=lambda r: r.score, reverse=True)
+        return sorted(results, key=lambda r: r.score, reverse=True), 0, 0.0
 
 
 class MockTokenClassifier:
@@ -104,8 +112,62 @@ class MockReranker:
 
 
 class MockGenerationClient:
-    def generate(self, system_prompt: str, user_content: str, *, max_tokens: int = 1024) -> str:
-        return (
-            "[MOCK GENERATION -- replace with AnthropicLLMClient/OpenAILLMClient]\n"
-            f"Would respond to: {user_content[:120]}..."
+    def generate(self, system_prompt: str, user_content: str, *, max_tokens: int = 1024) -> GenerationResult:
+        return GenerationResult(
+            content=(
+                "[MOCK GENERATION -- replace with AnthropicLLMClient/OpenAILLMClient]\n"
+                f"Would respond to: {user_content[:120]}..."
+            ),
+            tokens=0,
+            cost=0.0
         )
+
+class LiteLLMClient:
+    def __init__(self, model: str = "gpt-4o-mini"):
+        self.model = model
+
+    def generate(self, system_prompt: str, user_content: str, *, max_tokens: int = 1024) -> GenerationResult:
+        response = completion(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content}
+            ],
+            max_tokens=max_tokens
+        )
+        cost = completion_cost(completion_response=response) or 0.0
+        return GenerationResult(
+            content=response.choices[0].message.content or "",
+            tokens=response.usage.total_tokens if response.usage else 0,
+            cost=cost
+        )
+
+class LiteLLMClassifier:
+    def __init__(self, model: str = "gpt-4o-mini"):
+        self.model = model
+
+    def classify(self, text: str, candidate_labels: list[str]) -> tuple[list[ClassificationResult], int, float]:
+        labels_str = ", ".join(candidate_labels)
+        prompt = (
+            f"Classify the following text into exactly one of these labels: {labels_str}.\n"
+            f"Respond with only the label name. If none fit perfectly, pick the closest one.\n\n"
+            f"Text:\n{text}"
+        )
+        response = completion(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.0,
+            max_tokens=10,
+        )
+        content = (response.choices[0].message.content or "").strip()
+        cost = completion_cost(completion_response=response) or 0.0
+        tokens = response.usage.total_tokens if response.usage else 0
+        
+        results = []
+        for label in candidate_labels:
+            if label.lower() == content.lower():
+                results.append(ClassificationResult(label=label, score=0.9))
+            else:
+                results.append(ClassificationResult(label=label, score=0.1))
+        
+        return sorted(results, key=lambda r: r.score, reverse=True), tokens, cost

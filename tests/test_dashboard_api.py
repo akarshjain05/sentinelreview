@@ -213,3 +213,27 @@ def test_rerun_creates_new_review_and_enqueues_it(client, db_session, fake_queue
 def test_rerun_404_for_missing_review(client):
     response = client.post("/reviews/does-not-exist/rerun")
     assert response.status_code == 404
+
+
+def test_list_repositories(client, db_session):
+    _seed_review_with_findings(db_session)
+    response = client.get("/repositories")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["full_name"] == "akarsh/sentinelreview"
+    assert data[0]["review_count"] == 1
+
+
+def test_list_reviews_with_repo_filter(client, db_session):
+    _seed_review_with_findings(db_session)
+    
+    # Matching repo
+    response = client.get("/reviews?repo=akarsh/sentinelreview")
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+    # Non-matching repo
+    response = client.get("/reviews?repo=akarsh/other-repo")
+    assert response.status_code == 200
+    assert len(response.json()) == 0

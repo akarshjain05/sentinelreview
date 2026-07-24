@@ -17,3 +17,4 @@ scikit-learn>=1.5
 pyjwt>=2.7
 cryptography>=43.0
 respx>=0.23
+litellm>=1.40.0

@@ -28,7 +28,7 @@ class _AdversarialZeroShot:
                 results.append(ClassificationResult(label=label, score=0.05))  # correct, but low
             else:
                 results.append(ClassificationResult(label=label, score=0.01))
-        return sorted(results, key=lambda r: r.score, reverse=True)
+        return sorted(results, key=lambda r: r.score, reverse=True), 0, 0.0
 
 
 def test_classification_ignores_high_scoring_irrelevant_label():
@@ -73,7 +73,7 @@ class _ConfidentCorrectZeroShot:
             [ClassificationResult(label=label, score=0.9 if label == "command_injection" else 0.05)
              for label in candidate_labels],
             key=lambda r: r.score, reverse=True,
-        )
+        ), 0, 0.0
 
 
 def test_classification_raises_severity_when_matching_label_is_confident():

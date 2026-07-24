@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
-from app.routers import auth, evaluation, health, observability, reviews, webhooks
+from app.routers import auth, evaluation, health, observability, repositories, reviews, webhooks
+from app.routers import settings as settings_router
 
 settings = get_settings()
 
@@ -21,18 +22,17 @@ app = FastAPI(
 # with other projects' dev servers running at the same time.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173", "http://127.0.0.1:5173",
-        "http://localhost:5183", "http://127.0.0.1:5183",
-    ],
+    allow_origins=[origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()],
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(health.router)
 app.include_router(webhooks.router)
+app.include_router(settings_router.router)
 app.include_router(auth.router)
+app.include_router(repositories.router)
 app.include_router(reviews.router)
 app.include_router(evaluation.router)
 app.include_router(observability.router)

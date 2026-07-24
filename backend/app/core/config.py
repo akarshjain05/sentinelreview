@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     # Redis / job queue
     redis_url: str = "redis://localhost:6379/0"
 
+    # CORS and Frontend
+    frontend_url: str = "http://localhost:5183"
+    cors_origins: str = "http://localhost:5173,http://localhost:5183,http://127.0.0.1:5173,http://127.0.0.1:5183"
+
     # GitHub App
     github_app_id: str | None = None
     github_private_key: str | None = None
@@ -35,6 +39,7 @@ class Settings(BaseSettings):
     # LLM providers
     anthropic_api_key: str | None = None
     openai_api_key: str | None = None
+    gemini_api_key: str | None = None
 
     # Vulnerability data sources
     nvd_api_key: str | None = None

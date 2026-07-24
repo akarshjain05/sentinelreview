@@ -11,6 +11,7 @@ export const authApi = {
       headers: {
         Accept: "application/json",
       },
+      credentials: "include",
     });
     if (!res.ok) {
       throw new Error("Not authenticated");

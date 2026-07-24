@@ -15,6 +15,15 @@ export interface SeverityCounts {
   info: number;
 }
 
+export interface RepositorySummary {
+  id: string;
+  full_name: string;
+  default_branch: string;
+  is_active: boolean;
+  created_at: string;
+  review_count: number;
+}
+
 export interface ReviewSummary {
   id: string;
   status: ReviewStatus;
@@ -120,3 +129,23 @@ export interface EvalResultFile {
 export type EvalVariant = "bandit_only" | "merged" | "merged_hf" | "bandit_only_hf";
 
 export type EvalLatestResponse = Partial<Record<EvalVariant, EvalResultFile>>;
+
+export interface InstallationSettings {
+  id: string;
+  account_login: string;
+  notify_on_findings: boolean;
+  notify_email: string | null;
+}
+
+export interface RepositorySettings {
+  id: string;
+  full_name: string;
+  scan_enabled: boolean;
+  auto_patch_enabled: boolean;
+  min_severity_to_report: Severity;
+}
+
+export interface Settings {
+  installations: InstallationSettings[];
+  repositories: RepositorySettings[];
+}

@@ -3,14 +3,24 @@ import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Layout, LoadingState } from "./components/Layout";
 import { ReviewsListPage } from "./pages/ReviewsListPage";
 import { AuthProvider, useAuth } from "./components/AuthProvider";
-import { LoginPage } from "./pages/LoginPage";
+import { LandingPage } from "./pages/LandingPage";
+import { RepositoriesPage } from "./pages/RepositoriesPage";
+import { SettingsPage } from "./pages/SettingsPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
   return <>{children}</>;
+}
+
+function RootRoute() {
+  const { user } = useAuth();
+  if (!user) {
+    return <LandingPage />;
+  }
+  return <ReviewsListPage />;
 }
 
 // Code-split: EvaluationPage pulls in recharts (a genuinely heavy
@@ -32,12 +42,12 @@ export default function App() {
         <Layout>
           <Suspense fallback={<LoadingState label="Loading page" />}>
             <Routes>
-              <Route path="/login" element={<LoginPage />} />
+              <Route path="/" element={<RootRoute />} />
               <Route
-                path="/"
+                path="/repositories"
                 element={
                   <ProtectedRoute>
-                    <ReviewsListPage />
+                    <RepositoriesPage />
                   </ProtectedRoute>
                 }
               />
@@ -65,6 +75,15 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <SettingsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
         </Layout>

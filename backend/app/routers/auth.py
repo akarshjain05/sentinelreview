@@ -72,8 +72,7 @@ def login_github_callback(code: str, response: Response):
     session_token = create_access_token(jwt_payload)
     
     # Redirect back to the frontend
-    # Normally this would be dynamic or configured, but we know our frontend runs on 5173
-    redirect_url = "http://localhost:5173/"
+    redirect_url = settings.frontend_url
     
     redirect_resp = RedirectResponse(url=redirect_url)
     redirect_resp.set_cookie(
@@ -82,6 +81,7 @@ def login_github_callback(code: str, response: Response):
         httponly=True,
         max_age=86400,
         samesite="lax",
+        path="/",
     )
     return redirect_resp
 
@@ -89,7 +89,10 @@ def login_github_callback(code: str, response: Response):
 @router.post("/logout")
 def logout():
     """Clear the session cookie."""
-    resp = RedirectResponse(url="http://localhost:5173/login")
+    settings = get_settings()
+    # Redirect back to the frontend root (Landing Page)
+    redirect_url = settings.frontend_url
+    resp = RedirectResponse(url=redirect_url)
     resp.delete_cookie(COOKIE_NAME)
     return resp
 

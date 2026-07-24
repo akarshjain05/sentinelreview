@@ -1,13 +1,23 @@
 import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
+import { useAuth } from "./AuthProvider";
+import { api } from "../api/client";
 
 const NAV_ITEMS = [
+  { to: "/repositories", label: "Repositories" },
   { to: "/", label: "Reviews", end: true },
   { to: "/evaluation", label: "Evaluation" },
   { to: "/observability", label: "Observability" },
+  { to: "/settings", label: "Settings" },
 ];
 
 export function Layout({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  
+  const handleLogin = () => {
+    window.location.href = `${api.baseUrl}/auth/login/github`;
+  };
+
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
       <header className="relative overflow-hidden border-b border-[var(--color-border)] bg-[var(--color-surface)]">
@@ -31,23 +41,32 @@ export function Layout({ children }: { children: ReactNode }) {
             </div>
             <span className="font-display text-lg font-semibold tracking-tight">SentinelReview</span>
           </div>
-          <nav className="flex gap-1">
-            {NAV_ITEMS.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  `rounded px-3 py-1.5 text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-[var(--color-surface-raised)] text-[var(--color-text)]"
-                      : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-                  }`
-                }
+          <nav className="flex gap-1 items-center">
+            {user ? (
+              NAV_ITEMS.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) =>
+                    `rounded px-3 py-1.5 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-[var(--color-surface-raised)] text-[var(--color-text)]"
+                        : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                    }`
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              ))
+            ) : (
+              <button 
+                onClick={handleLogin}
+                className="rounded bg-[var(--color-text)] px-4 py-1.5 text-sm font-semibold text-[var(--color-bg)] transition hover:opacity-90"
               >
-                {item.label}
-              </NavLink>
-            ))}
+                Log in
+              </button>
+            )}
           </nav>
         </div>
       </header>

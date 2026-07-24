@@ -165,6 +165,8 @@ def test_pull_request_webhook_creates_pr_and_review_and_reports_auth_failure_whe
     response rather than crashing or silently losing it.
     """
     from app.core.config import Settings
+    monkeypatch.delenv("GITHUB_APP_ID", raising=False)
+    monkeypatch.delenv("GITHUB_PRIVATE_KEY", raising=False)
     monkeypatch.setattr("app.core.config.get_settings", lambda: Settings(_env_file=None))
 
     _post_webhook(client, "installation", _INSTALLATION_PAYLOAD)
