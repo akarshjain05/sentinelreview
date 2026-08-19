@@ -1,4 +1,5 @@
 rules:
+  # 1. SQL Injection (CWE-89)
   - id: sql-injection-string-concat
     languages: [python]
     severity: ERROR
@@ -15,6 +16,7 @@ rules:
           - pattern: $CURSOR.execute("..." + $VAR + "...")
           - pattern: $CURSOR.execute(f"...{$VAR}...")
 
+  # 2. Command Injection (CWE-78)
   - id: subprocess-shell-true
     languages: [python]
     severity: ERROR
@@ -32,6 +34,7 @@ rules:
           - pattern: subprocess.run($CMD, shell=True, ...)
           - pattern: subprocess.Popen($CMD, shell=True, ...)
 
+  # 3. Deserialization (CWE-502) - Pickle
   - id: pickle-loads-untrusted
     languages: [python]
     severity: ERROR
@@ -44,6 +47,7 @@ rules:
     patterns:
       - pattern: pickle.loads(...)
 
+  # 4. Deserialization (CWE-502) - YAML
   - id: yaml-load-unsafe
     languages: [python]
     severity: WARNING
@@ -55,6 +59,7 @@ rules:
     patterns:
       - pattern: yaml.load($DATA)
 
+  # 5. Hardcoded Credentials (CWE-798)
   - id: hardcoded-secret-assignment
     languages: [python]
     severity: WARNING
@@ -66,6 +71,7 @@ rules:
     patterns:
       - pattern-regex: "(?i)(password|secret|api_key|token)\\s*=\\s*[\"'][A-Za-z0-9_\\-]{8,}[\"']"
 
+  # 6. Eval Injection (CWE-95)
   - id: eval-on-input
     languages: [python]
     severity: ERROR
@@ -77,3 +83,183 @@ rules:
       cwe: "CWE-95: Eval Injection"
     patterns:
       - pattern: eval(...)
+
+  # 7. SSRF (CWE-918)
+  - id: requests-ssrf
+    languages: [python]
+    severity: ERROR
+    message: >-
+      Server-Side Request Forgery (SSRF) may be possible if the URL passed
+      to the requests library originates from untrusted user input.
+    metadata:
+      cwe: "CWE-918: Server-Side Request Forgery (SSRF)"
+    patterns:
+      - pattern-either:
+          - pattern: requests.get(request.args.get(...))
+          - pattern: requests.post(request.form.get(...))
+          - pattern: requests.get(request.form.get(...))
+
+  # 8. Path Traversal (CWE-22)
+  - id: path-traversal-open
+    languages: [python]
+    severity: ERROR
+    message: >-
+      Opening a file using a path derived directly from user input could
+      lead to a path traversal vulnerability. Validate and sanitize paths.
+    metadata:
+      cwe: "CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')"
+    patterns:
+      - pattern-either:
+          - pattern: open(request.args.get(...))
+          - pattern: open(request.form.get(...))
+
+  # 9. Weak Cryptography (CWE-327) - MD5/SHA1
+  - id: weak-crypto-md5-sha1
+    languages: [python]
+    severity: WARNING
+    message: >-
+      MD5 or SHA1 hash functions are considered cryptographically weak and
+      vulnerable to collision attacks. Use SHA256 or stronger.
+    metadata:
+      cwe: "CWE-327: Use of a Broken or Risky Cryptographic Algorithm"
+    patterns:
+      - pattern-either:
+          - pattern: hashlib.md5(...)
+          - pattern: hashlib.sha1(...)
+
+  # 10. Open Redirect (CWE-601)
+  - id: open-redirect
+    languages: [python]
+    severity: WARNING
+    message: >-
+      Redirecting to a URL derived directly from user input allows attackers
+      to launch phishing attacks. Validate the destination URL.
+    metadata:
+      cwe: "CWE-601: URL Redirection to Untrusted Site ('Open Redirect')"
+    patterns:
+      - pattern-either:
+          - pattern: redirect(request.args.get(...))
+          - pattern: flask.redirect(request.args.get(...))
+
+  # 11. XXE (CWE-611)
+  - id: xxe-lxml-resolve-entities
+    languages: [python]
+    severity: ERROR
+    message: >-
+      XML External Entity (XXE) vulnerabilities can occur when parsing XML
+      with entity resolution enabled. Ensure resolve_entities=False.
+    metadata:
+      cwe: "CWE-611: Improper Restriction of XML External Entity Reference"
+    patterns:
+      - pattern: lxml.etree.XMLParser(..., resolve_entities=True, ...)
+
+  # 12. JWT None Algorithm (CWE-295)
+  - id: jwt-none-algorithm
+    languages: [python]
+    severity: ERROR
+    message: >-
+      Accepting JWTs without verifying their signature (verify=False) allows
+      attackers to bypass authentication entirely.
+    metadata:
+      cwe: "CWE-295: Improper Certificate Validation" # Close approximation for signature bypass
+    patterns:
+      - pattern-either:
+          - pattern: 'jwt.decode(..., verify=False, ...)'
+          - pattern: 'jwt.decode(..., options={"verify_signature": False}, ...)'
+
+  # 13. Hardcoded JWT Secret (CWE-321)
+  - id: jwt-hardcoded-secret
+    languages: [python]
+    severity: WARNING
+    message: >-
+      Hardcoding the secret key for JWT signing allows attackers who read the
+      source code to forge valid tokens.
+    metadata:
+      cwe: "CWE-321: Use of Hard-coded Cryptographic Key"
+    patterns:
+      - pattern: jwt.encode(..., key="...", ...)
+
+  # 14. Insecure Randomness (CWE-338)
+  - id: insecure-randomness
+    languages: [python]
+    severity: WARNING
+    message: >-
+      The standard random library is not suitable for generating security tokens
+      or passwords. Use the secrets module instead.
+    metadata:
+      cwe: "CWE-338: Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG)"
+    patterns:
+      - pattern-either:
+          - pattern: random.randint(...)
+          - pattern: random.choice(...)
+          - pattern: random.random(...)
+
+  # 15. Cross-Site Scripting (XSS) (CWE-79)
+  - id: xss-mark-safe
+    languages: [python]
+    severity: ERROR
+    message: >-
+      Using mark_safe() on user-controlled input can lead to Cross-Site Scripting (XSS).
+    metadata:
+      cwe: "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')"
+    patterns:
+      - pattern: django.utils.safestring.mark_safe(request.GET.get(...))
+
+  # 16. Regex Injection (CWE-400)
+  - id: regex-injection
+    languages: [python]
+    severity: WARNING
+    message: >-
+      Compiling a regular expression directly from user input could lead to
+      Regex Denial of Service (ReDoS).
+    metadata:
+      cwe: "CWE-400: Uncontrolled Resource Consumption"
+    patterns:
+      - pattern: re.compile(request.args.get(...))
+
+  # 17. Zip Slip (CWE-22)
+  - id: zip-slip-extraction
+    languages: [python]
+    severity: ERROR
+    message: >-
+      Extracting archives without validating the paths of the files inside
+      could allow attackers to overwrite arbitrary files (Zip Slip).
+    metadata:
+      cwe: "CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')"
+    patterns:
+      - pattern: $TAR.extractall(...)
+
+  # 18. Insecure File Uploads (CWE-434)
+  - id: insecure-file-upload
+    languages: [python]
+    severity: WARNING
+    message: >-
+      Saving uploaded files directly based on user-provided filenames allows
+      attackers to bypass file extension and path restrictions.
+    metadata:
+      cwe: "CWE-434: Unrestricted Upload of File with Dangerous Type"
+    patterns:
+      - pattern: $FILE.save(os.path.join(..., $FILE.filename))
+
+  # 19. Assert in Production (CWE-617)
+  - id: assert-used-for-control-flow
+    languages: [python]
+    severity: WARNING
+    message: >-
+      Using assert statements for access control or data validation is unsafe,
+      as assertions are removed when Python runs with the -O flag.
+    metadata:
+      cwe: "CWE-617: Reachable Assertion"
+    patterns:
+      - pattern: assert request.user.is_authenticated
+
+  # 20. Code Injection (CWE-94)
+  - id: exec-on-input
+    languages: [python]
+    severity: ERROR
+    message: >-
+      exec() on external input allows arbitrary code execution.
+    metadata:
+      cwe: "CWE-94: Improper Control of Generation of Code ('Code Injection')"
+    patterns:
+      - pattern: exec(...)

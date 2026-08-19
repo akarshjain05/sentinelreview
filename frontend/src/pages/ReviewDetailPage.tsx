@@ -1,9 +1,80 @@
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { useApiFetch } from "../api/useApiFetch";
 import { EmptyState, ErrorState, LoadingState } from "../components/Layout";
 import { SeverityBadge, SeverityGauge } from "../components/Severity";
 import type { Finding } from "../types";
+
+function DiffViewer({ diff }: { diff: string }) {
+  const lines = diff.split("\n");
+  
+  return (
+    <pre className="overflow-x-auto rounded bg-black p-3 font-mono-data text-xs text-white">
+      <code>
+        {lines.map((line, i) => {
+          if (line.startsWith("+")) {
+            return <div key={i} className="text-green-400 bg-green-400/10 px-1 -mx-1">{line}</div>;
+          } else if (line.startsWith("-")) {
+            return <div key={i} className="text-red-400 bg-red-400/10 px-1 -mx-1">{line}</div>;
+          } else if (line.startsWith("@@")) {
+            return <div key={i} className="text-blue-400">{line}</div>;
+          }
+          return <div key={i} className="px-1">{line}</div>;
+        })}
+      </code>
+    </pre>
+  );
+}
+
+function PatchSuggestionViewer({ patch }: { patch: import("../types").PatchSuggestion }) {
+  const [expanded, setExpanded] = useState(false);
+  
+  return (
+    <div className="rounded border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
+      <div 
+        className="flex justify-between items-center cursor-pointer"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <p className="text-sm text-[var(--color-text-muted)] font-medium">
+          {patch.reasoning.split('\n')[0] || "Patch Suggestion"}
+        </p>
+        <span className="text-xs text-[var(--color-scan)] hover:underline">{expanded ? "Hide Patch" : "Show Patch"}</span>
+      </div>
+      
+      {expanded && (
+        <div className="mt-3">
+          <p className="mb-2 text-sm text-[var(--color-text-muted)]">{patch.reasoning}</p>
+          <DiffViewer diff={patch.diff} />
+          
+          {patch.verification_runs && patch.verification_runs.length > 0 && (
+            <div className="mt-4 space-y-2 border-t border-[var(--color-border)] pt-3 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <div className="text-xs uppercase tracking-wide text-[var(--color-text-faint)]">Verification Results</div>
+                <span className="rounded bg-yellow-500/20 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-yellow-500 border border-yellow-500/30">
+                  Simulated
+                </span>
+              </div>
+              {patch.verification_runs.map((vr) => (
+                <div key={vr.id} className="flex gap-2 text-xs font-semibold flex-wrap">
+                  <span className={`px-2 py-1 rounded ${vr.issue_resolved ? "bg-green-500/20 text-green-500 border border-green-500/30" : "bg-red-500/20 text-red-500 border border-red-500/30"}`}>
+                    {vr.issue_resolved ? "✓ Issue Resolved" : "✗ Issue Not Resolved"}
+                  </span>
+                  <span className={`px-2 py-1 rounded ${vr.tests_passed ? "bg-green-500/20 text-green-500 border border-green-500/30" : "bg-red-500/20 text-red-500 border border-red-500/30"}`}>
+                    {vr.tests_passed ? "✓ Tests Passed" : "✗ Tests Failed"}
+                  </span>
+                  <span className={`px-2 py-1 rounded ${vr.build_succeeded ? "bg-green-500/20 text-green-500 border border-green-500/30" : "bg-red-500/20 text-red-500 border border-red-500/30"}`}>
+                    {vr.build_succeeded ? "✓ Build Succeeded" : "✗ Build Failed"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function FindingCard({ finding }: { finding: Finding }) {
   return (
@@ -70,33 +141,7 @@ function FindingCard({ finding }: { finding: Finding }) {
           </div>
           <div className="space-y-4">
             {finding.patch_suggestions.map((patch) => (
-              <div key={patch.id} className="rounded border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
-                <p className="mb-2 text-sm text-[var(--color-text-muted)]">{patch.reasoning}</p>
-                <pre className="overflow-x-auto rounded bg-black p-3 font-mono-data text-xs text-white">
-                  {patch.diff}
-                </pre>
-                
-                {patch.verification_runs && patch.verification_runs.length > 0 && (
-                  <div className="mt-3 space-y-2 border-t border-[var(--color-border)] pt-2">
-                    <div className="text-xs uppercase tracking-wide text-[var(--color-text-faint)]">Verification Results</div>
-                    {patch.verification_runs.map((vr) => (
-                      <div key={vr.id} className="text-xs text-[var(--color-text-muted)]">
-                        <div className="flex gap-4">
-                          <span className={vr.issue_resolved ? "text-green-500" : "text-red-500"}>
-                            {vr.issue_resolved ? "✓ Issue Resolved" : "✗ Issue Not Resolved"}
-                          </span>
-                          <span className={vr.tests_passed ? "text-green-500" : "text-red-500"}>
-                            {vr.tests_passed ? "✓ Tests Passed" : "✗ Tests Failed"}
-                          </span>
-                          <span className={vr.build_succeeded ? "text-green-500" : "text-red-500"}>
-                            {vr.build_succeeded ? "✓ Build Succeeded" : "✗ Build Failed"}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <PatchSuggestionViewer key={patch.id} patch={patch} />
             ))}
           </div>
         </div>

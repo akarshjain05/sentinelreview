@@ -13,6 +13,7 @@ class InstallationSettingsUpdate(BaseModel):
     notify_email: str | None = None
 
 class RepositorySettingsUpdate(BaseModel):
+    is_active: bool | None = None
     scan_enabled: bool | None = None
     auto_patch_enabled: bool | None = None
     min_severity_to_report: Severity | None = None
@@ -66,10 +67,11 @@ def update_installation_settings(
     if inst.github_installation_id not in user.get("installations", []):
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    if update.notify_on_findings is not None:
-        inst.notify_on_findings = update.notify_on_findings
-    if update.notify_email is not None:
-        inst.notify_email = update.notify_email
+    update_data = update.model_dump(exclude_unset=True) if hasattr(update, "model_dump") else update.dict(exclude_unset=True)
+    if "notify_on_findings" in update_data:
+        inst.notify_on_findings = update_data["notify_on_findings"]
+    if "notify_email" in update_data:
+        inst.notify_email = update_data["notify_email"]
 
     db.commit()
     db.refresh(inst)
@@ -90,12 +92,15 @@ def update_repository_settings(
     if not repo.installation or repo.installation.github_installation_id not in user.get("installations", []):
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    if update.scan_enabled is not None:
-        repo.scan_enabled = update.scan_enabled
-    if update.auto_patch_enabled is not None:
-        repo.auto_patch_enabled = update.auto_patch_enabled
-    if update.min_severity_to_report is not None:
-        repo.min_severity_to_report = update.min_severity_to_report
+    update_data = update.model_dump(exclude_unset=True) if hasattr(update, "model_dump") else update.dict(exclude_unset=True)
+    if "is_active" in update_data:
+        repo.is_active = update_data["is_active"]
+    if "scan_enabled" in update_data:
+        repo.scan_enabled = update_data["scan_enabled"]
+    if "auto_patch_enabled" in update_data:
+        repo.auto_patch_enabled = update_data["auto_patch_enabled"]
+    if "min_severity_to_report" in update_data:
+        repo.min_severity_to_report = update_data["min_severity_to_report"]
 
     db.commit()
     db.refresh(repo)

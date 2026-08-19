@@ -1,4 +1,4 @@
-import type { EvalLatestResponse, LatencyStatsResponse, ReviewDetail, ReviewSummary } from "../types";
+import type { EvalLatestResponse, LatencyStatsResponse, ReviewDetail, ReviewSummary, DashboardStatsResponse } from "../types";
 
 // Configurable via Vite env var so a production build can point at a real
 // deployed API instead of localhost -- not hardcoded, since this dashboard
@@ -24,6 +24,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     credentials: "include", // Send session cookie
   });
   if (!response.ok) {
+    if (response.status === 401) {
+      window.location.href = "/";
+      return new Promise(() => {}); // Suspend indefinitely so callers don't process the error
+    }
     let detail = response.statusText;
     try {
       const body = await response.json();
@@ -40,9 +44,12 @@ export const api = {
   baseUrl: API_BASE,
   listRepositories: () => request<import("../types").RepositorySummary[]>("/repositories"),
   listReviews: (repo?: string) => request<ReviewSummary[]>(repo ? `/reviews?repo=${encodeURIComponent(repo)}` : "/reviews"),
+  getFindingPatch: (reviewId: string, findingId: string) => 
+    request<{patch_suggestions: import("../types").PatchSuggestion[]}>(`/reviews/${reviewId}/findings/${findingId}/patch`),
   getReview: (id: string) => request<ReviewDetail>(`/reviews/${id}`),
   getLatestEvaluation: () => request<EvalLatestResponse>("/evaluation/latest"),
   getLatencyStats: () => request<LatencyStatsResponse>("/observability/latency"),
+  getDashboardStats: () => request<DashboardStatsResponse>("/observability/dashboard"),
   getSettings: () => request<import("../types").Settings>("/settings"),
   updateInstallation: (id: string, data: Partial<import("../types").InstallationSettings>) => 
     request<{status: string}>(`/settings/installations/${id}`, {

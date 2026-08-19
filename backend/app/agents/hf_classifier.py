@@ -78,9 +78,9 @@ class HFZeroShotClassifier:
 
         self._pipeline = pipeline("zero-shot-classification", model=model_name, device=device)
 
-    def classify(self, text: str, candidate_labels: list[str]) -> list[ClassificationResult]:
+    def classify(self, text: str, candidate_labels: list[str]) -> tuple[list[ClassificationResult], int, float]:
         if not text.strip() or not candidate_labels:
-            return []
+            return [], 0, 0.0
 
         truncated_text = text[: self.MAX_INPUT_CHARS]
 
@@ -94,7 +94,8 @@ class HFZeroShotClassifier:
 
         result = self._pipeline(truncated_text, candidate_labels=natural_labels, multi_label=True)
 
-        return [
+        results = [
             ClassificationResult(label=label_lookup.get(nat_label, nat_label), score=float(score))
             for nat_label, score in zip(result["labels"], result["scores"])
         ]
+        return results, 0, 0.0

@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session  # noqa: E402
 
 from app.db.models import KnowledgeDocument  # noqa: E402
 from app.db.session import SessionLocal, init_db  # noqa: E402
-from app.knowledge.ghsa_ingest import advisories_to_knowledge_documents, fetch_advisories  # noqa: E402
+from app.knowledge import ghsa_ingest, nvd_ingest, osv_ingest  # noqa: E402
 
 
 def upsert_documents(db: Session, docs: list[dict]) -> tuple[int, int]:
@@ -85,33 +85,53 @@ def upsert_documents(db: Session, docs: list[dict]) -> tuple[int, int]:
     return created, updated
 
 
-def run_ingestion(ecosystems: list[str], pages: int, token: str | None) -> None:
+def run_ingestion(sources: list[str], ecosystems: list[str], pages: int, token: str | None, nvd_api_key: str | None) -> None:
     init_db()
     db = SessionLocal()
     total_created, total_updated = 0, 0
     try:
-        for ecosystem in ecosystems:
-            print(f"Fetching advisories for ecosystem={ecosystem}...")
-            advisories = fetch_advisories(
-                ecosystem=ecosystem, max_pages=pages, github_token=token,
-            )
-            docs = advisories_to_knowledge_documents(advisories)
-            created, updated = upsert_documents(db, docs)
-            total_created += created
-            total_updated += updated
-            print(f"  {ecosystem}: {len(advisories)} fetched, {created} created, {updated} updated")
+        for source in sources:
+            print(f"--- Ingesting from {source.upper()} ---")
+            for ecosystem in ecosystems:
+                print(f"Fetching {source.upper()} advisories for ecosystem={ecosystem}...")
+                advisories = []
+                docs = []
+                
+                if source == "ghsa":
+                    advisories = ghsa_ingest.fetch_advisories(
+                        ecosystem=ecosystem, max_pages=pages, github_token=token,
+                    )
+                    docs = ghsa_ingest.advisories_to_knowledge_documents(advisories)
+                elif source == "nvd":
+                    advisories = nvd_ingest.fetch_advisories(
+                        ecosystem=ecosystem, max_pages=pages, api_key=nvd_api_key, per_page=100,
+                    )
+                    docs = nvd_ingest.advisories_to_knowledge_documents(advisories)
+                elif source == "osv":
+                    advisories = osv_ingest.fetch_advisories(ecosystem=ecosystem)
+                    docs = osv_ingest.advisories_to_knowledge_documents(advisories)
+                else:
+                    print(f"Unknown source: {source}")
+                    continue
+                    
+                created, updated = upsert_documents(db, docs)
+                total_created += created
+                total_updated += updated
+                print(f"  {ecosystem} ({source}): {len(advisories)} fetched, {created} created, {updated} updated")
     finally:
         db.close()
     print(f"Done. {total_created} new documents, {total_updated} updated.")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Ingest real GHSA advisories into KnowledgeDocument")
+    parser = argparse.ArgumentParser(description="Ingest real advisories into KnowledgeDocument")
+    parser.add_argument("--sources", nargs="+", choices=["ghsa", "nvd", "osv"], default=["ghsa"])
     parser.add_argument("--ecosystems", nargs="+", default=["pip"])
     parser.add_argument("--pages", type=int, default=2)
     parser.add_argument("--token", default=os.environ.get("GITHUB_TOKEN"))
+    parser.add_argument("--nvd-token", default=os.environ.get("NVD_API_KEY"))
     args = parser.parse_args()
-    run_ingestion(args.ecosystems, args.pages, args.token)
+    run_ingestion(args.sources, args.ecosystems, args.pages, args.token, args.nvd_token)
 
 
 if __name__ == "__main__":

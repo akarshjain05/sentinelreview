@@ -93,7 +93,7 @@ export function SettingsPage() {
   };
 
   if (loading) return <LoadingState label="Loading settings..." />;
-  if (error) return <div className="text-red-500 p-8 text-center">{error}</div>;
+  if (error) return <div className="text-[var(--color-critical)] p-8 text-center">{error}</div>;
   if (!settings) return null;
 
   return (
@@ -134,7 +134,7 @@ export function SettingsPage() {
                       checked={inst.notify_on_findings}
                       onChange={() => handleToggleNotify(inst)}
                     />
-                    <div className="w-11 h-6 bg-[var(--color-border)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-scan)]"></div>
+                    <div className="w-11 h-6 bg-[var(--color-border)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-transparent after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-transparent after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-scan)]"></div>
                   </label>
                 </div>
                 
@@ -201,7 +201,7 @@ export function SettingsPage() {
                           checked={repo.scan_enabled}
                           onChange={(e) => handleUpdateRepo(repo, { scan_enabled: e.target.checked })}
                         />
-                        <div className="w-9 h-5 bg-[var(--color-border)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--color-scan)]"></div>
+                        <div className="w-9 h-5 bg-[var(--color-border)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-transparent after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-transparent after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--color-scan)]"></div>
                       </label>
                     </td>
                     <td className="px-6 py-4">
@@ -213,7 +213,7 @@ export function SettingsPage() {
                           onChange={(e) => handleUpdateRepo(repo, { auto_patch_enabled: e.target.checked })}
                           disabled={!repo.scan_enabled}
                         />
-                        <div className={`w-9 h-5 bg-[var(--color-border)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all ${repo.scan_enabled ? "peer-checked:bg-green-500" : "opacity-50 cursor-not-allowed"}`}></div>
+                        <div className={`w-9 h-5 bg-[var(--color-border)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-transparent after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-transparent after:border after:rounded-full after:h-4 after:w-4 after:transition-all ${repo.scan_enabled ? "peer-checked:bg-[var(--color-scan)]" : "opacity-50 cursor-not-allowed"}`}></div>
                       </label>
                     </td>
                     <td className="px-6 py-4">

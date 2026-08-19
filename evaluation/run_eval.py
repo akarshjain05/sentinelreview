@@ -116,7 +116,7 @@ def run_bandit_eval(zero_shot=None, use_semgrep: bool = True) -> tuple[list[Case
         target_label, target_label_score = None, None
         max_label, max_label_score = None, None
         if zero_shot is not None:
-            classifications = zero_shot.classify(case.code, CWE_CANDIDATE_LABELS)
+            classifications, _, _ = zero_shot.classify(case.code, CWE_CANDIDATE_LABELS)
             if classifications:
                 scores_by_label = {c.label: c.score for c in classifications}
                 # case.category conveniently already matches the candidate

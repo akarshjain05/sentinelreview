@@ -140,6 +140,7 @@ export interface InstallationSettings {
 export interface RepositorySettings {
   id: string;
   full_name: string;
+  is_active?: boolean;
   scan_enabled: boolean;
   auto_patch_enabled: boolean;
   min_severity_to_report: Severity;
@@ -148,4 +149,15 @@ export interface RepositorySettings {
 export interface Settings {
   installations: InstallationSettings[];
   repositories: RepositorySettings[];
+}
+
+export interface DashboardStatsResponse {
+  findings_by_severity: { severity: string; count: number }[];
+  findings_over_time: { date: string; count: number }[];
+  reviews_over_time: {
+    date: string;
+    avg_latency_ms: number;
+    total_cost_usd: number;
+    review_count: number;
+  }[];
 }

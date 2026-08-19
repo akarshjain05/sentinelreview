@@ -5,6 +5,7 @@ All external integrations (GitHub App creds, LLM provider keys, DB URLs) are
 read from environment variables so nothing secret ever lives in source.
 """
 from functools import lru_cache
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -40,6 +41,7 @@ class Settings(BaseSettings):
     anthropic_api_key: str | None = None
     openai_api_key: str | None = None
     gemini_api_key: str | None = None
+    groq_api_key: str | None = None
 
     # Vulnerability data sources
     nvd_api_key: str | None = None
@@ -55,6 +57,11 @@ class Settings(BaseSettings):
     max_context_tokens: int = 8000
     max_files_per_review: int = 40
 
+    @model_validator(mode="after")
+    def validate_production_secrets(self):
+        if self.environment != "development" and self.session_secret_key == "change-me-in-production":
+            raise ValueError("SECURITY RISK: session_secret_key MUST be changed from the default value in production.")
+        return self
 
 @lru_cache
 def get_settings() -> Settings:

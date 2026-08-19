@@ -18,14 +18,18 @@ from app.db.models import (  # noqa: E402
     AgentName,
     AgentRun,
     Base,
+    Embedding,
+    EvaluationResult,
     Finding,
     Installation,
     KnowledgeDocument,
+    PatchSuggestion,
     PullRequest,
     Repository,
     Review,
     ReviewStatus,
     Severity,
+    VerificationRun,
 )
 from app.db.session import SessionLocal, engine  # noqa: E402
 
@@ -35,8 +39,11 @@ def seed() -> None:
     db = SessionLocal()
 
     # Clear existing data for idempotent re-seeding.
-    for model in [AgentRun, Finding, Review, PullRequest, Repository, Installation, KnowledgeDocument]:
-        db.query(model).delete()
+    for model in [VerificationRun, PatchSuggestion, EvaluationResult, AgentRun, Finding, Review, PullRequest, Repository, Installation, KnowledgeDocument, Embedding]:
+        try:
+            db.query(model).delete()
+        except Exception:
+            pass
     db.commit()
 
     inst = Installation(id=str(uuid.uuid4()), github_installation_id=1001, account_login="akarsh")

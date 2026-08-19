@@ -154,6 +154,54 @@ def get_review(
     }
 
 
+@router.get("/{review_id}/findings/{finding_id}/patch")
+def get_finding_patch(
+    review_id: str,
+    finding_id: str,
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+) -> dict:
+    review = db.get(Review, review_id)
+    if review is None:
+        raise HTTPException(status_code=404, detail="Review not found")
+
+    pr = review.pull_request
+    repo = pr.repository if pr else None
+    
+    # Authorization check
+    installations = user.get("installations", [])
+    if not repo or not repo.installation or repo.installation.github_installation_id not in installations:
+        raise HTTPException(status_code=403, detail="Not authorized to view this review")
+
+    finding = next((f for f in review.findings if f.id == finding_id), None)
+    if not finding:
+        raise HTTPException(status_code=404, detail="Finding not found")
+
+    return {
+        "patch_suggestions": [
+            {
+                "id": p.id,
+                "diff": p.diff,
+                "reasoning": p.reasoning,
+                "citations": _resolve_citations(db, p.cited_document_ids),
+                "verification_runs": [
+                    {
+                        "id": v.id,
+                        "issue_resolved": v.issue_resolved,
+                        "tests_passed": v.tests_passed,
+                        "build_succeeded": v.build_succeeded,
+                        "introduced_new_findings": v.introduced_new_findings,
+                        "sandbox_log": v.sandbox_log,
+                        "created_at": v.created_at,
+                    }
+                    for v in p.verification_runs
+                ]
+            }
+            for p in finding.patch_suggestions
+        ]
+    }
+
+
 @router.post("/{review_id}/rerun")
 def rerun_review(
     review_id: str, 
@@ -188,6 +236,6 @@ def rerun_review(
     db.add(new_review)
     db.commit()
 
-    job = queue.enqueue(run_review_job, new_review.id)
+    job = queue.enqueue("app.jobs.review_worker.run_review_job", new_review.id)
 
     return {"status": "requeued", "review_id": new_review.id, "job_id": job.id}

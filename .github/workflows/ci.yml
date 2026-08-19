@@ -9,9 +9,15 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
     env:
       DATABASE_URL: sqlite:///./test_sentinelreview.db
       ENVIRONMENT: test
+      REDIS_URL: redis://localhost:6379
     steps:
       - uses: actions/checkout@v4
 

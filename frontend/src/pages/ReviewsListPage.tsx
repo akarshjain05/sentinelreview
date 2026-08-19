@@ -43,7 +43,7 @@ export function ReviewsListPage() {
             <span>Filtered by repo:</span>
             <span className="font-mono-data font-semibold">{repo}</span>
             <Link
-              to="/"
+              to="/reviews"
               className="ml-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
               title="Clear filter"
             >

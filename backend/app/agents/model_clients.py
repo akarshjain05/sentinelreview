@@ -135,7 +135,10 @@ class LiteLLMClient:
             ],
             max_tokens=max_tokens
         )
-        cost = completion_cost(completion_response=response) or 0.0
+        try:
+            cost = completion_cost(completion_response=response) or 0.0
+        except Exception:
+            cost = 0.0
         return GenerationResult(
             content=response.choices[0].message.content or "",
             tokens=response.usage.total_tokens if response.usage else 0,
@@ -160,7 +163,10 @@ class LiteLLMClassifier:
             max_tokens=10,
         )
         content = (response.choices[0].message.content or "").strip()
-        cost = completion_cost(completion_response=response) or 0.0
+        try:
+            cost = completion_cost(completion_response=response) or 0.0
+        except Exception:
+            cost = 0.0
         tokens = response.usage.total_tokens if response.usage else 0
         
         results = []

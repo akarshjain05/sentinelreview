@@ -146,6 +146,9 @@ def test_job_runs_real_pipeline_end_to_end_and_detects_real_vulnerability(db_ses
     """
     monkeypatch.setenv("GITHUB_APP_ID", "123456")
     monkeypatch.setenv("GITHUB_PRIVATE_KEY", rsa_keypair)
+    monkeypatch.setenv("GEMINI_API_KEY", "")
+    monkeypatch.setenv("OPENAI_API_KEY", "")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "")
     get_settings.cache_clear()
 
     respx.post("https://api.github.com/app/installations/9001/access_tokens").mock(
@@ -172,7 +175,19 @@ def test_job_runs_real_pipeline_end_to_end_and_detects_real_vulnerability(db_ses
     review = db_session.get(Review, review_id)
     assert review.status == ReviewStatus.COMPLETED
     assert len(review.findings) >= 1
-    assert any(f.cwe_id == "CWE-89" for f in review.findings)
+    
+    finding = next((f for f in review.findings if f.cwe_id == "CWE-89"), None)
+    assert finding is not None
+    
+    # Verify patch suggestions and verification runs were persisted
+    assert len(finding.patch_suggestions) >= 1
+    patch = finding.patch_suggestions[0]
+    assert patch.diff is not None
+    assert patch.reasoning is not None
+    
+    assert len(patch.verification_runs) >= 1
+    vr = patch.verification_runs[0]
+    assert vr.issue_resolved is not None
 
     # Real observability: AgentRun rows for the full 7-stage pipeline.
     agent_runs = db_session.query(AgentRun).filter_by(review_id=review_id).all()

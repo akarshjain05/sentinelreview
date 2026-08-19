@@ -28,13 +28,10 @@ def decode_access_token(token: str) -> dict:
 def get_current_user(request: Request) -> dict:
     """Dependency to get the current logged-in user from the session cookie."""
     token = request.cookies.get(COOKIE_NAME)
-    print(f"DEBUG get_current_user: cookies received = {request.cookies}")
     if not token:
-        print("DEBUG get_current_user: token is missing!")
         raise HTTPException(status_code=401, detail="Not authenticated")
     payload = decode_access_token(token)
     if not payload:
-        print("DEBUG get_current_user: payload could not be decoded!")
         raise HTTPException(status_code=401, detail="Invalid or expired session")
     return payload
 

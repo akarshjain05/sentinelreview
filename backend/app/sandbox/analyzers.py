@@ -206,8 +206,8 @@ class SemgrepAnalyzer:
     disagree on edge cases, which is the point of running both.
     """
 
-    def __init__(self, rules_path: Path | None = None, timeout_seconds: int = 60):
-        self.rules_path = rules_path or _SEMGREP_RULES_PATH
+    def __init__(self, rules_path: str | None = None, timeout_seconds: int = 60):
+        self.rules_path = rules_path or "p/default"
         self.timeout_seconds = timeout_seconds
 
     def analyze_file(self, file_path: str, source: str) -> list[RawFinding]:
@@ -248,18 +248,32 @@ class SemgrepAnalyzer:
 
                 rule_id = result["check_id"].rsplit(".", 1)[-1]  # strip the path-prefixed rule namespace
                 cwe_raw = result.get("extra", {}).get("metadata", {}).get("cwe")
+                if isinstance(cwe_raw, list) and cwe_raw:
+                    cwe_raw = cwe_raw[0]
+                elif not isinstance(cwe_raw, str):
+                    cwe_raw = None
+                
                 cwe_match = _CWE_METADATA_PATTERN.search(cwe_raw) if cwe_raw else None
+
+                
+                # Semgrep sometimes redacts the "lines" field with "requires login" for registry rules.
+                # Extract the snippet manually from the source file.
+                start_line = result["start"]["line"]
+                end_line = result["end"]["line"]
+                source_lines = files[original_path].splitlines()
+                # line numbers are 1-indexed, slice is 0-indexed
+                code_snippet = "\n".join(source_lines[max(0, start_line-1):end_line])
 
                 results[original_path].append(
                     RawFinding(
-                        start_line=result["start"]["line"],
-                        end_line=result["end"]["line"],
+                        start_line=start_line,
+                        end_line=end_line,
                         test_id=rule_id,
                         cwe_id=cwe_match.group(0) if cwe_match else None,
                         severity=result.get("extra", {}).get("severity", "MEDIUM").upper(),
                         confidence="MEDIUM",  # this ruleset doesn't set per-rule confidence; treat uniformly
                         message=result.get("extra", {}).get("message", "").strip(),
-                        code_snippet=result.get("extra", {}).get("lines", ""),
+                        code_snippet=code_snippet,
                     )
                 )
             return results

@@ -96,6 +96,8 @@ def run_review_job(review_id: str) -> None:
             except GitHubAPIError as e:
                 # We won't fail the whole review if only the comment posting failed, 
                 # but we could log it or store the error message.
+                import logging
+                logging.error(f"Failed to post comment to PR: {e}")
                 pass
 
     finally:
@@ -103,6 +105,10 @@ def run_review_job(review_id: str) -> None:
 
 
 def _fail(db, review: Review, message: str) -> None:
+    from datetime import datetime, timezone
     review.status = ReviewStatus.FAILED
+    if not review.started_at:
+        review.started_at = datetime.now(timezone.utc)
+    review.completed_at = datetime.now(timezone.utc)
     review.error_message = message[:2000]
     db.commit()

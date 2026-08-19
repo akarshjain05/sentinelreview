@@ -31,7 +31,7 @@ from app.jobs.review_worker import run_review_job
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
 # Events we actually act on; everything else is ack'd and ignored.
-SUPPORTED_EVENTS = {"installation", "pull_request", "pull_request_review_comment", "check_run"}
+SUPPORTED_EVENTS = {"installation", "installation_repositories", "pull_request", "pull_request_review_comment", "check_run"}
 TRIGGERING_ACTIONS = {"opened", "synchronize", "reopened", "ready_for_review"}
 
 
@@ -90,6 +90,40 @@ def _handle_installation_event(payload: dict, db: Session) -> dict:
             ))
     db.commit()
     return {"status": "installation_synced", "installation_id": github_installation_id}
+
+
+def _handle_installation_repositories_event(payload: dict, db: Session) -> dict:
+    installation_data = payload["installation"]
+    github_installation_id = installation_data["id"]
+
+    existing_installation = db.scalar(
+        select(Installation).where(Installation.github_installation_id == github_installation_id)
+    )
+    if not existing_installation:
+        return {"status": "error", "reason": f"installation {github_installation_id} not found"}
+
+    for repo_data in payload.get("repositories_added", []):
+        repo_existing = db.scalar(select(Repository).where(Repository.github_repo_id == repo_data["id"]))
+        if repo_existing is None:
+            db.add(Repository(
+                id=str(uuid.uuid4()), installation_id=existing_installation.id,
+                github_repo_id=repo_data["id"], full_name=repo_data["full_name"],
+            ))
+        else:
+            repo_existing.is_active = True
+            repo_existing.installation_id = existing_installation.id
+
+    for repo_data in payload.get("repositories_removed", []):
+        repo_existing = db.scalar(select(Repository).where(Repository.github_repo_id == repo_data["id"]))
+        if repo_existing is not None:
+            # DO NOT db.delete(repo_existing) because it will fail with IntegrityError
+            # due to existing PullRequests/Reviews. Instead, detach it from the installation
+            # and mark it inactive so it disappears from the UI but history is preserved.
+            repo_existing.installation_id = None
+            repo_existing.is_active = False
+
+    db.commit()
+    return {"status": "installation_repositories_synced", "installation_id": github_installation_id}
 
 
 def _handle_pull_request_event(payload: dict, db: Session, queue) -> dict:
@@ -160,7 +194,7 @@ def _handle_pull_request_event(payload: dict, db: Session, queue) -> dict:
     # tokens are short-lived (~1hr) and jobs can sit in the queue for a
     # while before a worker picks them up -- reusing the token fetched here
     # would risk it having expired by the time the job runs.
-    job = queue.enqueue(run_review_job, review.id)
+    job = queue.enqueue("app.jobs.review_worker.run_review_job", review.id)
 
     return {
         "status": "queued",
@@ -189,9 +223,15 @@ async def github_webhook(
         return {"status": "ignored", "reason": f"unhandled event type: {x_github_event}"}
 
     payload = await request.json()
+    print(f"DEBUG: Received github event {x_github_event}")
+    if x_github_event == "pull_request":
+        print(f"DEBUG: PR Action {payload.get('action')}, repo ID: {payload.get('repository', {}).get('id')}, PR number: {payload.get('pull_request', {}).get('number')}")
 
     if x_github_event == "installation":
         return _handle_installation_event(payload, db)
+
+    if x_github_event == "installation_repositories":
+        return _handle_installation_repositories_event(payload, db)
 
     if x_github_event == "pull_request":
         return _handle_pull_request_event(payload, db, queue)

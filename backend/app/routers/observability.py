@@ -13,7 +13,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.auth.oauth import get_current_user
-from app.db.models import AgentRun, Review
+from app.db.models import AgentRun, Review, Finding, Repository, Installation, PullRequest
 from app.db.session import get_db
 from app.services.pipeline_runner import _NODE_TO_AGENT_NAME
 
@@ -32,6 +32,20 @@ def get_latency_stats(
     db: Session = Depends(get_db),
     user: dict = Depends(get_current_user),
 ) -> dict:
+    installation_ids = user.get("installations", [])
+    if not installation_ids:
+        return {
+            "per_agent": [],
+            "total_reviews": 0,
+            "avg_review_latency_ms": None,
+            "total_cost_usd": 0.0,
+            "cost_tracking_note": (
+                "cost_usd is not yet populated by any real LLM call in this pipeline "
+                "(classification/generation clients are currently mocked) -- this "
+                "total reflects that, not a genuine $0 cost."
+            ),
+        }
+
     per_agent = (
         db.query(
             AgentRun.agent_name,
@@ -40,20 +54,24 @@ def get_latency_stats(
             func.min(AgentRun.latency_ms).label("min_latency_ms"),
             func.max(AgentRun.latency_ms).label("max_latency_ms"),
         )
+        .join(Review, AgentRun.review_id == Review.id)
+        .join(PullRequest, Review.pull_request_id == PullRequest.id)
+        .join(Repository, PullRequest.repository_id == Repository.id)
+        .join(Installation, Repository.installation_id == Installation.id)
+        .filter(Installation.github_installation_id.in_(installation_ids))
         .group_by(AgentRun.agent_name)
         .all()
     )
 
-    # succeeded_count is computed via a separate per-agent query below
-    # rather than summed in the query above: summing a boolean column
-    # directly (e.g. func.sum(AgentRun.succeeded)) is portable in Postgres
-    # but not reliably so in SQLite, and this project runs against both
-    # (see docker-compose.yml vs. the SQLite dev path) -- a plain COUNT
-    # with a WHERE filter is the version that's actually correct on both.
     per_agent_stats = []
     for agent_name, run_count, avg_latency, min_latency, max_latency in per_agent:
         succeeded_count = (
             db.query(func.count(AgentRun.id))
+            .join(Review, AgentRun.review_id == Review.id)
+            .join(PullRequest, Review.pull_request_id == PullRequest.id)
+            .join(Repository, PullRequest.repository_id == Repository.id)
+            .join(Installation, Repository.installation_id == Installation.id)
+            .filter(Installation.github_installation_id.in_(installation_ids))
             .filter(AgentRun.agent_name == agent_name, AgentRun.succeeded.is_(True))
             .scalar()
         )
@@ -66,9 +84,32 @@ def get_latency_stats(
             "success_rate": round(succeeded_count / run_count, 3) if run_count else None,
         })
 
-    total_reviews = db.query(func.count(Review.id)).scalar()
-    avg_review_latency = db.query(func.avg(Review.total_latency_ms)).filter(Review.total_latency_ms > 0).scalar()
-    total_cost = db.query(func.sum(AgentRun.cost_usd)).scalar() or 0.0
+    total_reviews = (
+        db.query(func.count(Review.id))
+        .join(PullRequest, Review.pull_request_id == PullRequest.id)
+        .join(Repository, PullRequest.repository_id == Repository.id)
+        .join(Installation, Repository.installation_id == Installation.id)
+        .filter(Installation.github_installation_id.in_(installation_ids))
+        .scalar()
+    )
+    avg_review_latency = (
+        db.query(func.avg(Review.total_latency_ms))
+        .join(PullRequest, Review.pull_request_id == PullRequest.id)
+        .join(Repository, PullRequest.repository_id == Repository.id)
+        .join(Installation, Repository.installation_id == Installation.id)
+        .filter(Installation.github_installation_id.in_(installation_ids))
+        .filter(Review.total_latency_ms > 0)
+        .scalar()
+    )
+    total_cost = (
+        db.query(func.sum(AgentRun.cost_usd))
+        .join(Review, AgentRun.review_id == Review.id)
+        .join(PullRequest, Review.pull_request_id == PullRequest.id)
+        .join(Repository, PullRequest.repository_id == Repository.id)
+        .join(Installation, Repository.installation_id == Installation.id)
+        .filter(Installation.github_installation_id.in_(installation_ids))
+        .scalar() or 0.0
+    )
 
     return {
         "per_agent": sorted(per_agent_stats, key=lambda a: _PIPELINE_ORDER.index(a["agent_name"])),
@@ -85,4 +126,81 @@ def get_latency_stats(
             "(classification/generation clients are currently mocked) -- this "
             "total reflects that, not a genuine $0 cost."
         ),
+    }
+
+@router.get("/dashboard")
+def get_dashboard_stats(
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+) -> dict:
+    installation_ids = user.get("installations", [])
+    if not installation_ids:
+        return {"findings_by_severity": [], "findings_over_time": [], "reviews_over_time": []}
+
+    # 1. findings_by_severity
+    severity_query = (
+        db.query(Finding.severity, func.count(Finding.id).label("count"))
+        .join(Review, Finding.review_id == Review.id)
+        .join(PullRequest, Review.pull_request_id == PullRequest.id)
+        .join(Repository, PullRequest.repository_id == Repository.id)
+        .join(Installation, Repository.installation_id == Installation.id)
+        .filter(Installation.github_installation_id.in_(installation_ids))
+        .group_by(Finding.severity)
+        .all()
+    )
+    findings_by_severity = [
+        {"severity": sev.value if hasattr(sev, "value") else sev, "count": count}
+        for sev, count in severity_query
+    ]
+
+    # 2. findings_over_time
+    # Use SQLite/Postgres compatible date truncation
+    time_query = (
+        db.query(func.date(Review.completed_at).label("date"), func.count(Finding.id).label("count"))
+        .join(Review, Finding.review_id == Review.id)
+        .join(PullRequest, Review.pull_request_id == PullRequest.id)
+        .join(Repository, PullRequest.repository_id == Repository.id)
+        .join(Installation, Repository.installation_id == Installation.id)
+        .filter(Installation.github_installation_id.in_(installation_ids))
+        .filter(Review.completed_at.isnot(None))
+        .group_by(func.date(Review.completed_at))
+        .all()
+    )
+    findings_over_time = [
+        {"date": date_str, "count": count}
+        for date_str, count in time_query
+        if date_str
+    ]
+
+    # 3. reviews_over_time
+    reviews_query = (
+        db.query(
+            func.date(Review.completed_at).label("date"),
+            func.avg(Review.total_latency_ms).label("avg_latency_ms"),
+            func.sum(Review.total_cost_usd).label("total_cost_usd"),
+            func.count(Review.id).label("review_count")
+        )
+        .join(PullRequest, Review.pull_request_id == PullRequest.id)
+        .join(Repository, PullRequest.repository_id == Repository.id)
+        .join(Installation, Repository.installation_id == Installation.id)
+        .filter(Installation.github_installation_id.in_(installation_ids))
+        .filter(Review.completed_at.isnot(None))
+        .group_by(func.date(Review.completed_at))
+        .all()
+    )
+    reviews_over_time = [
+        {
+            "date": date_str,
+            "avg_latency_ms": round(avg_lat, 1) if avg_lat else 0,
+            "total_cost_usd": round(tot_cost, 4) if tot_cost else 0,
+            "review_count": count
+        }
+        for date_str, avg_lat, tot_cost, count in reviews_query
+        if date_str
+    ]
+
+    return {
+        "findings_by_severity": findings_by_severity,
+        "findings_over_time": findings_over_time,
+        "reviews_over_time": reviews_over_time
     }

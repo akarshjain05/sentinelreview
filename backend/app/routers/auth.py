@@ -10,20 +10,34 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.get("/login/github")
 def login_github():
     """Redirect to GitHub's OAuth authorization page."""
+    import secrets
     settings = get_settings()
     if not settings.github_client_id:
         raise HTTPException(status_code=500, detail="GitHub Client ID not configured")
     
-    # We request the minimum scopes needed. For GitHub Apps, user-to-server tokens 
-    # just need to know who the user is to check their installations.
-    # Actually, we don't need any special scopes, just the default identity.
-    url = f"https://github.com/login/oauth/authorize?client_id={settings.github_client_id}"
-    return RedirectResponse(url)
+    is_secure = settings.environment != "development"
+    state = secrets.token_urlsafe(32)
+    url = f"https://github.com/login/oauth/authorize?client_id={settings.github_client_id}&state={state}"
+    response = RedirectResponse(url)
+    response.set_cookie(
+        key="oauth_state",
+        value=state,
+        httponly=True,
+        secure=is_secure,
+        max_age=600,
+        samesite="lax",
+        path="/",
+    )
+    return response
 
 
 @router.get("/login/github/callback")
-def login_github_callback(code: str, response: Response):
+def login_github_callback(request: Request, code: str, state: str = None):
     """Exchange the code for a token and set the session cookie."""
+    cookie_state = request.cookies.get("oauth_state")
+    if not cookie_state or not state or cookie_state != state:
+        raise HTTPException(status_code=400, detail="Invalid OAuth state (CSRF protection)")
+
     settings = get_settings()
     if not settings.github_client_id or not settings.github_client_secret:
         raise HTTPException(status_code=500, detail="GitHub OAuth not fully configured")
@@ -73,12 +87,15 @@ def login_github_callback(code: str, response: Response):
     
     # Redirect back to the frontend
     redirect_url = settings.frontend_url
+    is_secure = settings.environment != "development"
     
     redirect_resp = RedirectResponse(url=redirect_url)
+    redirect_resp.delete_cookie("oauth_state", path="/", secure=is_secure, httponly=True, samesite="lax")
     redirect_resp.set_cookie(
         key=COOKIE_NAME,
         value=session_token,
         httponly=True,
+        secure=is_secure,
         max_age=86400,
         samesite="lax",
         path="/",
@@ -90,10 +107,11 @@ def login_github_callback(code: str, response: Response):
 def logout():
     """Clear the session cookie."""
     settings = get_settings()
+    is_secure = settings.environment != "development"
     # Redirect back to the frontend root (Landing Page)
     redirect_url = settings.frontend_url
-    resp = RedirectResponse(url=redirect_url)
-    resp.delete_cookie(COOKIE_NAME)
+    resp = RedirectResponse(url=redirect_url, status_code=303)
+    resp.delete_cookie(COOKIE_NAME, path="/", secure=is_secure, httponly=True, samesite="lax")
     return resp
 
 

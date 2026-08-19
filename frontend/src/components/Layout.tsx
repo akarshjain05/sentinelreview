@@ -4,8 +4,9 @@ import { useAuth } from "./AuthProvider";
 import { api } from "../api/client";
 
 const NAV_ITEMS = [
+  { to: "/", label: "Dashboard", end: true },
+  { to: "/reviews", label: "Reviews" },
   { to: "/repositories", label: "Repositories" },
-  { to: "/", label: "Reviews", end: true },
   { to: "/evaluation", label: "Evaluation" },
   { to: "/observability", label: "Observability" },
   { to: "/settings", label: "Settings" },
@@ -14,9 +15,6 @@ const NAV_ITEMS = [
 export function Layout({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   
-  const handleLogin = () => {
-    window.location.href = `${api.baseUrl}/auth/login/github`;
-  };
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
@@ -43,29 +41,39 @@ export function Layout({ children }: { children: ReactNode }) {
           </div>
           <nav className="flex gap-1 items-center">
             {user ? (
-              NAV_ITEMS.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.end}
-                  className={({ isActive }) =>
-                    `rounded px-3 py-1.5 text-sm font-medium transition-colors ${
-                      isActive
-                        ? "bg-[var(--color-surface-raised)] text-[var(--color-text)]"
-                        : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-                    }`
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              ))
+              <>
+                {NAV_ITEMS.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.end}
+                    className={({ isActive }) =>
+                      `rounded px-3 py-1.5 text-sm font-medium transition-colors ${
+                        isActive
+                          ? "bg-[var(--color-surface-raised)] text-[var(--color-text)]"
+                          : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                      }`
+                    }
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
+                <form action={`${api.baseUrl}/auth/logout`} method="POST" className="ml-2 flex items-center border-l border-[var(--color-border)] pl-3">
+                  <button 
+                    type="submit"
+                    className="rounded px-3 py-1.5 text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-critical)] transition-colors"
+                  >
+                    Log out
+                  </button>
+                </form>
+              </>
             ) : (
-              <button 
-                onClick={handleLogin}
-                className="rounded bg-[var(--color-text)] px-4 py-1.5 text-sm font-semibold text-[var(--color-bg)] transition hover:opacity-90"
+              <a 
+                href={`${api.baseUrl}/auth/login/github`}
+                className="rounded bg-[var(--color-text)] px-4 py-1.5 text-sm font-semibold text-[var(--color-bg)] transition hover:opacity-90 inline-block"
               >
                 Log in
-              </button>
+              </a>
             )}
           </nav>
         </div>
@@ -92,7 +100,7 @@ export function ErrorState({ message }: { message: string }) {
   );
 }
 
-export function EmptyState({ title, hint }: { title: string; hint: string }) {
+export function EmptyState({ title, hint }: { title: string; hint: import("react").ReactNode }) {
   return (
     <div className="rounded border border-dashed border-[var(--color-border-strong)] px-6 py-12 text-center">
       <p className="font-display text-base font-medium text-[var(--color-text)]">{title}</p>

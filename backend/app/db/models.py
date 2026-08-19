@@ -256,19 +256,3 @@ class VerificationRun(Base):
 
     patch_suggestion: Mapped["PatchSuggestion"] = relationship(back_populates="verification_runs")
 
-
-class EvaluationResult(Base):
-    """Result of running the full pipeline against a labeled benchmark (OWASP Benchmark, Juliet)."""
-    __tablename__ = "evaluation_results"
-
-    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
-    benchmark_name: Mapped[str] = mapped_column(String)  # "owasp_benchmark" | "juliet"
-    pipeline_variant: Mapped[str] = mapped_column(String)  # "sentinelreview" | "semgrep_only" | "llm_only"
-    precision: Mapped[float] = mapped_column(Float)
-    recall: Mapped[float] = mapped_column(Float)
-    f1: Mapped[float] = mapped_column(Float)
-    false_positives: Mapped[int] = mapped_column(Integer)
-    false_negatives: Mapped[int] = mapped_column(Integer)
-    avg_latency_ms: Mapped[int] = mapped_column(Integer)
-    avg_cost_usd: Mapped[float] = mapped_column(Float)
-    run_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))

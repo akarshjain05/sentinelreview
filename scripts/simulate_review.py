@@ -1,5 +1,6 @@
 import asyncio
 import uuid
+import random
 from app.agents.state import ReviewState, ChangedFile, Finding
 from app.agents.graph import build_graph
 from app.services.pipeline_runner import run_review_with_observability
@@ -10,14 +11,16 @@ def run():
     print("Initializing dummy data...")
     db = SessionLocal()
     
-    repo = Repository(id=str(uuid.uuid4()), github_repo_id=999999, full_name="demo/vuln-repo")
-    db.add(repo)
-    db.commit()
+    repo = db.query(Repository).filter_by(github_repo_id=999999).first()
+    if not repo:
+        repo = Repository(id=str(uuid.uuid4()), github_repo_id=999999, full_name="demo/vuln-repo")
+        db.add(repo)
+        db.commit()
     
     pr = PullRequest(
         id=str(uuid.uuid4()), 
         repository_id=repo.id, 
-        number=1, 
+        number=random.randint(1000, 99999), 
         title="Add user search", 
         head_sha="dummy", base_sha="dummy", author_login="demo-user"
     )
@@ -39,20 +42,13 @@ def run():
         pr_title="Add user search",
         pr_body="Adds a search endpoint",
         head_sha="dummy",
-        changed_files=[],
-        raw_analyzer_findings=[
-            Finding(
-                file_path="app/db.py",
-                start_line=10,
-                end_line=12,
-                vulnerability_type="SQL Injection",
-                severity="high",
-                confidence=0.9,
-                source="semgrep",
-                explanation="Unsanitized user input in SQL query.",
-                code_snippet='def search(user_id):\n    cursor.execute("SELECT * FROM users WHERE id = " + user_id)'
+        changed_files=[
+            ChangedFile(
+                path="app/db.py",
+                diff='+ def search(user_id):\n+     cursor.execute("SELECT * FROM users WHERE id = " + user_id)\n'
             )
-        ]
+        ],
+        raw_analyzer_findings=[]
     )
 
     print(f"Triggering LLM Pipeline for Review ID: {review.id} ...")

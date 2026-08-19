@@ -26,7 +26,7 @@ def test_classify_maps_natural_language_labels_back_to_original_snake_case():
     )
     classifier = HFZeroShotClassifier(pipeline_fn=fake_pipeline)
 
-    results = classifier.classify(
+    results, _, _ = classifier.classify(
         "cursor.execute('SELECT * FROM x WHERE y=' + val)",
         ["sql_injection", "command_injection"],
     )
@@ -44,19 +44,19 @@ def test_classify_preserves_pipeline_score_ordering():
     )
     classifier = HFZeroShotClassifier(pipeline_fn=fake_pipeline)
 
-    results = classifier.classify("eval(x)", ["sql_injection", "xss", "unsafe_eval"])
+    results, _, _ = classifier.classify("eval(x)", ["sql_injection", "xss", "unsafe_eval"])
 
     assert [r.label for r in results] == ["unsafe_eval", "xss", "sql_injection"]
 
 
 def test_classify_returns_empty_for_blank_text():
     classifier = HFZeroShotClassifier(pipeline_fn=_fake_pipeline_factory([], []))
-    assert classifier.classify("   ", ["sql_injection"]) == []
+    assert classifier.classify("   ", ["sql_injection"])[0] == []
 
 
 def test_classify_returns_empty_for_no_candidate_labels():
     classifier = HFZeroShotClassifier(pipeline_fn=_fake_pipeline_factory([], []))
-    assert classifier.classify("some code", []) == []
+    assert classifier.classify("some code", [])[0] == []
 
 
 def test_classify_truncates_oversized_input_before_calling_pipeline():

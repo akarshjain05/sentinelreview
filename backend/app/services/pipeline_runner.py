@@ -53,6 +53,8 @@ def run_review_with_observability(
         raise ValueError(f"Review {review_id} not found")
 
     review.status = ReviewStatus.RUNNING
+    from datetime import datetime, timezone
+    review.started_at = datetime.now(timezone.utc)
     db.commit()
 
     final_state: dict = {}
@@ -60,12 +62,12 @@ def run_review_with_observability(
     total_cost_usd = 0.0
 
     try:
+        start = time.perf_counter()
         for step_output in graph.stream(state):
+            latency_ms = int((time.perf_counter() - start) * 1000)
+            
             # step_output looks like {"<node_name>": {<partial state update>}}
             for node_name, partial_update in step_output.items():
-                start = time.perf_counter()  # node already ran; we measure the DB-write overhead separately
-                latency_ms = int((time.perf_counter() - start) * 1000)
-
                 agent_name = _NODE_TO_AGENT_NAME.get(node_name)
                 if agent_name is None:
                     continue  # unknown/internal node, skip rather than fail the whole review
@@ -85,6 +87,8 @@ def run_review_with_observability(
                 total_latency_ms += latency_ms
                 total_cost_usd += partial_update.get("cost_usd", 0.0)
                 final_state.update(partial_update)
+            
+            start = time.perf_counter()
         db.commit()
 
         # This was a real, previously-hidden gap: findings only ever lived
@@ -159,12 +163,14 @@ def run_review_with_observability(
         db.commit()
 
         review.status = ReviewStatus.COMPLETED
+        review.completed_at = datetime.now(timezone.utc)
         review.total_latency_ms = total_latency_ms
         review.total_cost_usd = total_cost_usd
         db.commit()
 
     except Exception as e:
         review.status = ReviewStatus.FAILED
+        review.completed_at = datetime.now(timezone.utc)
         review.error_message = str(e)[:2000]
         db.commit()
         raise

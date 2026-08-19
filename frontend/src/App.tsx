@@ -7,6 +7,8 @@ import { LandingPage } from "./pages/LandingPage";
 import { RepositoriesPage } from "./pages/RepositoriesPage";
 import { SettingsPage } from "./pages/SettingsPage";
 
+import { DashboardPage } from "./pages/DashboardPage";
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   if (!user) {
@@ -20,7 +22,7 @@ function RootRoute() {
   if (!user) {
     return <LandingPage />;
   }
-  return <ReviewsListPage />;
+  return <DashboardPage />;
 }
 
 // Code-split: EvaluationPage pulls in recharts (a genuinely heavy
@@ -43,6 +45,14 @@ export default function App() {
           <Suspense fallback={<LoadingState label="Loading page" />}>
             <Routes>
               <Route path="/" element={<RootRoute />} />
+              <Route
+                path="/reviews"
+                element={
+                  <ProtectedRoute>
+                    <ReviewsListPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/repositories"
                 element={

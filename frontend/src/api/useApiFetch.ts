@@ -26,7 +26,8 @@ export function useApiFetch<T>(fetcher: () => Promise<T>, deps: unknown[] = []):
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        const message = err instanceof ApiError ? err.message : "Something went wrong loading this data.";
+        const isApiError = err instanceof ApiError || (err && typeof err === "object" && "name" in err && err.name === "ApiError");
+        const message = isApiError ? (err as ApiError).message : "Something went wrong loading this data.";
         setState({ status: "error", error: message });
       });
 
