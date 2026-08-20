@@ -15,14 +15,14 @@ export function DashboardPage() {
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <Link to="/reviews" className="group rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-md transition-all hover:border-[var(--color-scan)] hover:shadow-[var(--color-scan)]/10 hover:shadow-xl">
+        <Link to="/observability" className="group rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-md transition-all hover:border-[var(--color-scan)] hover:shadow-[var(--color-scan)]/10 hover:shadow-xl">
           <div className="flex items-center space-x-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[var(--color-scan)]/10">
               <History className="h-6 w-6 text-[var(--color-scan)]" />
             </div>
             <div>
-              <h3 className="font-semibold text-[var(--color-text)] group-hover:text-[var(--color-scan)] transition-colors">Recent Reviews</h3>
-              <p className="text-sm text-[var(--color-text-muted)]">View all PR scans</p>
+              <h3 className="font-semibold text-[var(--color-text)] group-hover:text-[var(--color-scan)] transition-colors">System Health</h3>
+              <p className="text-sm text-[var(--color-text-muted)]">View agent latency & metrics</p>
             </div>
           </div>
         </Link>

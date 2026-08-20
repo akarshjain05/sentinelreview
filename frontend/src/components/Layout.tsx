@@ -5,7 +5,6 @@ import { api } from "../api/client";
 
 const NAV_ITEMS = [
   { to: "/", label: "Dashboard", end: true },
-  { to: "/reviews", label: "Reviews" },
   { to: "/repositories", label: "Repositories" },
   { to: "/analytics", label: "Analytics" },
   { to: "/observability", label: "Observability" },

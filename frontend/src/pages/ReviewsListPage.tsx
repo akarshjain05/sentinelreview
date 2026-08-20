@@ -1,4 +1,4 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, Navigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useApiFetch } from "../api/useApiFetch";
 import { EmptyState, ErrorState, LoadingState } from "../components/Layout";
@@ -28,6 +28,10 @@ export function ReviewsListPage() {
   const [searchParams] = useSearchParams();
   const repo = searchParams.get("repo") || undefined;
   const state = useApiFetch(() => api.listReviews(repo), [repo]);
+
+  if (!repo) {
+    return <Navigate to="/repositories" replace />;
+  }
 
   return (
     <div>
