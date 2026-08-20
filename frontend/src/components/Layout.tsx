@@ -7,7 +7,7 @@ const NAV_ITEMS = [
   { to: "/", label: "Dashboard", end: true },
   { to: "/reviews", label: "Reviews" },
   { to: "/repositories", label: "Repositories" },
-  { to: "/evaluation", label: "Evaluation" },
+  { to: "/analytics", label: "Analytics" },
   { to: "/observability", label: "Observability" },
   { to: "/settings", label: "Settings" },
 ];

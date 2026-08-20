@@ -8,6 +8,7 @@ import { RepositoriesPage } from "./pages/RepositoriesPage";
 import { SettingsPage } from "./pages/SettingsPage";
 
 import { DashboardPage } from "./pages/DashboardPage";
+import { AnalyticsPage } from "./pages/AnalyticsPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -45,6 +46,14 @@ export default function App() {
           <Suspense fallback={<LoadingState label="Loading page" />}>
             <Routes>
               <Route path="/" element={<RootRoute />} />
+              <Route
+                path="/analytics"
+                element={
+                  <ProtectedRoute>
+                    <AnalyticsPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/reviews"
                 element={
