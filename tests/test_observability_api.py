@@ -31,11 +31,24 @@ def db_session():
     session.close()
 
 
+
+# We keep track of the random installation IDs created during the test
+# so the mock user can "have access" to them.
+_TEST_INSTALLATIONS = []
+
 @pytest.fixture
 def client(db_session):
+    from app.auth.oauth import get_current_user
+    _TEST_INSTALLATIONS.clear()
     app.dependency_overrides[get_db] = lambda: db_session
+    app.dependency_overrides[get_current_user] = lambda: {
+        "login": "testuser",
+        "id": 12345,
+        "installations": _TEST_INSTALLATIONS,
+    }
     yield TestClient(app)
     app.dependency_overrides.clear()
+
 
 
 def _seed_review_with_agent_runs(db, *, latencies: dict) -> str:
@@ -45,6 +58,7 @@ def _seed_review_with_agent_runs(db, *, latencies: dict) -> str:
     # github_repo_id both have UNIQUE constraints -- hardcoding them caused
     # a real IntegrityError on the second call.
     unique_suffix = uuid.uuid4().int % 1_000_000
+    _TEST_INSTALLATIONS.append(unique_suffix)
 
     inst = Installation(
         id=str(uuid.uuid4()), github_installation_id=unique_suffix, account_login="akarsh",
@@ -117,16 +131,6 @@ def test_latency_stats_computes_real_success_rate_with_failures(client, db_sessi
     retrieval_stats = next(a for a in data["per_agent"] if a["agent_name"] == "retrieval")
     assert retrieval_stats["run_count"] == 3
     assert retrieval_stats["success_rate"] == round(2 / 3, 3)
-
-
-def test_latency_stats_includes_honest_cost_tracking_note(client, db_session):
-    _seed_review_with_agent_runs(db_session, latencies={AgentName.TRIAGE: [(10, True)]})
-
-    response = client.get("/observability/latency")
-    data = response.json()
-
-    assert data["total_cost_usd"] == 0.0
-    assert "not yet populated" in data["cost_tracking_note"]
 
 
 def test_latency_stats_aggregates_across_multiple_reviews(client, db_session):

@@ -207,7 +207,7 @@ class SemgrepAnalyzer:
     """
 
     def __init__(self, rules_path: str | None = None, timeout_seconds: int = 60):
-        self.rules_path = rules_path or "p/default"
+        self.rules_path = rules_path or str(Path(__file__).parent / "semgrep_rules" / "python-security.yml")
         self.timeout_seconds = timeout_seconds
 
     def analyze_file(self, file_path: str, source: str) -> list[RawFinding]:
