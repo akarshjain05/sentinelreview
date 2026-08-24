@@ -18,6 +18,7 @@ jobs:
       DATABASE_URL: sqlite:///./test_sentinelreview.db
       ENVIRONMENT: test
       REDIS_URL: redis://localhost:6379
+      SESSION_SECRET_KEY: "test-secret-key-that-is-at-least-32-bytes-long"
     steps:
       - uses: actions/checkout@v4
 
