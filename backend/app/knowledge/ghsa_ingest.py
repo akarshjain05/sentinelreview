@@ -71,7 +71,7 @@ def fetch_advisories(
     next_url: str | None = f"{GITHUB_API_BASE}/advisories"
     next_params: dict | None = {"per_page": per_page}
     if ecosystem:
-        next_params["ecosystem"] = ecosystem
+        next_params["ecosystem"] = ecosystem  # type: ignore
 
     try:
         for _page_number in range(1, max_pages + 1):

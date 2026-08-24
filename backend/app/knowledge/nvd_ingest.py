@@ -61,7 +61,7 @@ def fetch_advisories(
                 
                 # If ecosystem is provided as keyword, NVD supports keywordSearch
                 if ecosystem:
-                    params["keywordSearch"] = ecosystem
+                    params["keywordSearch"] = ecosystem  # type: ignore
                     
                 response = client.get(NVD_API_BASE, params=params, headers=headers)
                 if response.status_code == 200:

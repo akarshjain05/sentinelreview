@@ -103,13 +103,13 @@ def run_ingestion(sources: list[str], ecosystems: list[str], pages: int, token: 
                     )
                     docs = ghsa_ingest.advisories_to_knowledge_documents(advisories)
                 elif source == "nvd":
-                    advisories = nvd_ingest.fetch_advisories(
+                    advisories = nvd_ingest.fetch_advisories(  # type: ignore
                         ecosystem=ecosystem, max_pages=pages, api_key=nvd_api_key, per_page=100,
                     )
-                    docs = nvd_ingest.advisories_to_knowledge_documents(advisories)
+                    docs = nvd_ingest.advisories_to_knowledge_documents(advisories)  # type: ignore
                 elif source == "osv":
-                    advisories = osv_ingest.fetch_advisories(ecosystem=ecosystem)
-                    docs = osv_ingest.advisories_to_knowledge_documents(advisories)
+                    advisories = osv_ingest.fetch_advisories(ecosystem=ecosystem)  # type: ignore
+                    docs = osv_ingest.advisories_to_knowledge_documents(advisories)  # type: ignore
                 else:
                     print(f"Unknown source: {source}")
                     continue

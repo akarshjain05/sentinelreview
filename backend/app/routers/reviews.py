@@ -73,11 +73,11 @@ def list_reviews(
     out = []
     for review in reviews:
         pr = review.pull_request
-        repo = pr.repository if pr else None
+        repo = pr.repository if pr else None  # type: ignore
         out.append({
             "id": review.id,
             "status": review.status,
-            "repo_full_name": repo.full_name if repo else None,
+            "repo_full_name": repo.full_name if repo else None,  # type: ignore
             "pr_number": pr.number if pr else None,
             "pr_title": pr.title if pr else None,
             "started_at": review.started_at,

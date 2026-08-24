@@ -318,7 +318,7 @@ def build_graph(
             # on a trivial cache class during evaluation (see README) --
             # confidently asserting an irrelevant label is worse than not
             # corroborating at all.
-            target_label = CWE_TO_LABEL.get(finding.cwe_id)
+            target_label = CWE_TO_LABEL.get(finding.cwe_id)  # type: ignore
             target_score = scores_by_label.get(target_label) if target_label else None
 
             cited = [s.document_id for s in state.retrieved_knowledge if s.document_id == finding.cwe_id]

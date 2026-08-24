@@ -54,7 +54,7 @@ def login_github():
 
 
 @router.get("/login/github/callback")
-def login_github_callback(request: Request, code: str, state: str = None):  # noqa: RUF013
+def login_github_callback(request: Request, code: str, state: str | None = None):  # noqa: RUF013  # type: ignore
     """Exchange the code for a token and set the session cookie."""
     settings = get_settings()
     cookie_state_token = request.cookies.get("oauth_state")

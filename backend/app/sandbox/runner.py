@@ -72,7 +72,7 @@ def run_in_sandbox(
             )
             return SandboxResult(proc.returncode, proc.stdout, proc.stderr, timed_out=False)
         except subprocess.TimeoutExpired as e:
-            return SandboxResult(-1, e.stdout or "", e.stderr or "", timed_out=True)
+            return SandboxResult(-1, (e.stdout.decode() if isinstance(e.stdout, bytes) else str(e.stdout or '')), (e.stderr.decode() if isinstance(e.stderr, bytes) else str(e.stderr or '')), timed_out=True)
 
     docker_cmd = [
         "docker", "run", "--rm",
@@ -91,4 +91,4 @@ def run_in_sandbox(
         proc = subprocess.run(docker_cmd, capture_output=True, text=True, timeout=timeout)  # noqa: PLW1510
         return SandboxResult(proc.returncode, proc.stdout, proc.stderr, timed_out=False)
     except subprocess.TimeoutExpired as e:
-        return SandboxResult(-1, e.stdout or "", e.stderr or "", timed_out=True)
+        return SandboxResult(-1, (e.stdout.decode() if isinstance(e.stdout, bytes) else str(e.stdout or '')), (e.stderr.decode() if isinstance(e.stderr, bytes) else str(e.stderr or '')), timed_out=True)

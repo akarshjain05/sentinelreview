@@ -130,7 +130,7 @@ def run_review_with_observability(
         # Persist Patch Suggestions
         patch_models = []
         for patch in final_state.get("patch_suggestions", []):
-            db_finding = finding_models[patch.finding_index] if 0 <= patch.finding_index < len(finding_models) else None
+            db_finding = finding_models[patch.finding_index] if 0 <= patch.finding_index < len(finding_models) else None  # type: ignore
             db_patch = None
             if db_finding:
                 db_patch = PatchSuggestion(

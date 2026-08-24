@@ -25,7 +25,7 @@ def decode_access_token(token: str) -> dict:
         payload = jwt.decode(token, settings.session_secret_key, algorithms=[ALGORITHM])
         return payload
     except jwt.PyJWTError:
-        return None
+        return None  # type: ignore
 
 def get_current_user(request: Request) -> dict:
     """Dependency to get the current logged-in user from the session cookie."""
@@ -58,7 +58,7 @@ def get_user_installations(token: str) -> list[int]:
             
             # Check for pagination
             link_header = resp.headers.get("Link")
-            url = None
+            url = None  # type: ignore
             if link_header:
                 for link in link_header.split(","):
                     if 'rel="next"' in link:
