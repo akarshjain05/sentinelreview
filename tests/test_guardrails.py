@@ -1,5 +1,4 @@
 import pytest
-
 from app.security.guardrails import assert_tool_allowed, sanitize_untrusted_text
 
 

@@ -20,7 +20,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from sqlalchemy import select
+from sqlalchemy import select  # noqa: I001
 from sqlalchemy.orm import Session
 
 from app.db.models import KnowledgeDocument

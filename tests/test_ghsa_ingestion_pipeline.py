@@ -1,10 +1,9 @@
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
 from app.db.models import Base, KnowledgeDocument
 from app.knowledge.ingest_cli import upsert_documents
 from app.knowledge.tfidf_index import TfidfKnowledgeIndex
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 # Real advisory shapes, taken directly from a live fetch_advisories() run
 # against GitHub's actual API (not fabricated) -- see conversation history:
@@ -76,7 +75,7 @@ def test_db_unique_constraint_rejects_duplicate_bypassing_upsert(db_session):
         source="ghsa", external_id="GHSA-constraint-test",
         title="B", content="y", cwe_ids=None, url=None,
     ))
-    with pytest.raises(Exception):  # IntegrityError, but the base Exception check keeps this dialect-agnostic
+    with pytest.raises(Exception):  # IntegrityError, but the base Exception check keeps this dialect-agnostic  # noqa: B017
         db_session.commit()
     db_session.rollback()
 

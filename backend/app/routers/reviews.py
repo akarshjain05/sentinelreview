@@ -1,4 +1,4 @@
-import uuid
+import uuid  # noqa: I001
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
@@ -51,8 +51,8 @@ def _resolve_citations(db: Session, cited_document_ids: str | None) -> list[dict
 @router.get("")
 def list_reviews(
     repo: str | None = None,
-    db: Session = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),  # noqa: B008
+    user: dict = Depends(get_current_user),  # noqa: B008
 ) -> list[dict]:
     """Reviews newest-first, with enough summary data for a list view without N+1 detail fetches."""
     installations = user.get("installations", [])
@@ -93,8 +93,8 @@ def list_reviews(
 @router.get("/{review_id}")
 def get_review(
     review_id: str, 
-    db: Session = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),  # noqa: B008
+    user: dict = Depends(get_current_user),  # noqa: B008
 ) -> dict:
     review = db.get(Review, review_id)
     if review is None:
@@ -166,8 +166,8 @@ def get_review(
 def get_finding_patch(
     review_id: str,
     finding_id: str,
-    db: Session = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),  # noqa: B008
+    user: dict = Depends(get_current_user),  # noqa: B008
 ) -> dict:
     review = db.get(Review, review_id)
     if review is None:
@@ -213,9 +213,9 @@ def get_finding_patch(
 @router.post("/{review_id}/rerun")
 def rerun_review(
     review_id: str, 
-    db: Session = Depends(get_db), 
-    queue=Depends(get_review_queue),
-    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),  # noqa: B008
+    queue=Depends(get_review_queue),  # noqa: B008
+    user: dict = Depends(get_current_user),  # noqa: B008
 ) -> dict:
     """
     Creates a fresh Review row for the same pull request and enqueues it --

@@ -3,12 +3,6 @@ import uuid
 import httpx
 import pytest
 import respx
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
-
 from app.core.config import get_settings
 from app.db.models import (
     AgentRun,
@@ -20,6 +14,11 @@ from app.db.models import (
     ReviewStatus,
 )
 from app.jobs.review_worker import run_review_job
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 
 @pytest.fixture

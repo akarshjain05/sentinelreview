@@ -1,7 +1,6 @@
 import httpx
 import pytest
 import respx
-
 from app.knowledge.ghsa_ingest import (
     GHSAIngestError,
     advisories_to_knowledge_documents,

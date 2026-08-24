@@ -138,7 +138,7 @@ class LiteLLMClient:
         )
         try:
             cost = completion_cost(completion_response=response) or 0.0
-        except Exception:
+        except Exception:  # noqa: BLE001
             cost = 0.0
         return GenerationResult(
             content=response.choices[0].message.content or "",
@@ -166,7 +166,7 @@ class LiteLLMClassifier:
         content = (response.choices[0].message.content or "").strip()
         try:
             cost = completion_cost(completion_response=response) or 0.0
-        except Exception:
+        except Exception:  # noqa: BLE001
             cost = 0.0
         tokens = response.usage.total_tokens if response.usage else 0
         
@@ -184,7 +184,7 @@ class LiteLLMClassifier:
             for label in candidate_labels:
                 score = float(parsed.get(label, 0.0))
                 results.append(ClassificationResult(label=label, score=score))
-        except Exception:
+        except Exception:  # noqa: BLE001
             # Fallback if JSON parsing fails
             for label in candidate_labels:
                 if label.lower() in content.lower():

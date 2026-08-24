@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import Generator  # noqa: I001
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker

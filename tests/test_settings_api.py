@@ -1,13 +1,13 @@
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import StaticPool
-
 from app.db.models import Base, Installation, Repository, Severity
 from app.db.session import get_db
 from app.jobs.queue import get_review_queue
 from app.main import app
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
+
 
 @pytest.fixture
 def db_session():

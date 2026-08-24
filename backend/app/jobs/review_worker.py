@@ -102,7 +102,7 @@ def run_review_job(review_id: str) -> None:
                 # We won't fail the whole review if only the comment posting failed, 
                 # but we could log it or store the error message.
                 import logging
-                logging.error(f"Failed to post comment to PR: {e}")
+                logging.error(f"Failed to post comment to PR: {e}")  # noqa: LOG015
 
     finally:
         db.close()

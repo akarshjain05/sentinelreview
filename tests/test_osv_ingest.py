@@ -1,10 +1,10 @@
 import io
 import json
 import zipfile
+
 import httpx
 import pytest
 import respx
-
 from app.knowledge.osv_ingest import (
     OSVIngestError,
     advisories_to_knowledge_documents,

@@ -2,11 +2,6 @@ import json
 import uuid
 
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
-
 from app.db.models import (
     Base,
     Finding,
@@ -21,6 +16,10 @@ from app.db.models import (
 from app.db.session import get_db
 from app.jobs.queue import get_review_queue
 from app.main import app
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 
 @pytest.fixture

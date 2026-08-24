@@ -1,14 +1,20 @@
 import uuid
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
 from app.agents.graph import build_graph
 from app.agents.state import ChangedFile, ReviewState
-from app.db.models import Base, Installation, PullRequest, Repository, Review, ReviewStatus
+from app.db.models import (
+    Base,
+    Installation,
+    PullRequest,
+    Repository,
+    Review,
+    ReviewStatus,
+)
 from app.sandbox.analyzers import MockStaticAnalyzer
 from app.services.pipeline_runner import run_review_with_observability
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 
 @pytest.fixture

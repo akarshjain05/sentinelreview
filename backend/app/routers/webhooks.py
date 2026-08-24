@@ -13,7 +13,7 @@ webhooks must ack in <10s or GitHub considers them failed and retries,
 potentially causing duplicate reviews, so running the full LangGraph
 pipeline inline here would be wrong regardless of whether the queue is wired.
 """
-import hashlib
+import hashlib  # noqa: I001
 import hmac
 import uuid
 
@@ -211,8 +211,8 @@ async def github_webhook(
     request: Request,
     x_hub_signature_256: str | None = Header(default=None),
     x_github_event: str | None = Header(default=None),
-    db: Session = Depends(get_db),
-    queue=Depends(get_review_queue),
+    db: Session = Depends(get_db),  # noqa: B008
+    queue=Depends(get_review_queue),  # noqa: B008
 ):
     body = await request.body()
     if not _verify_signature(body, x_hub_signature_256):

@@ -18,7 +18,7 @@ def test_merges_findings_from_two_analyzers_agreeing_on_same_line_and_cwe():
     merged = merge_analyzer_findings(findings)
 
     assert len(merged) == 1
-    file_path, rf, analyzers = merged[0]
+    file_path, rf, analyzers = merged[0]  # noqa: RUF059
     assert set(analyzers) == {"bandit", "semgrep"}
 
 

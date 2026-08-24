@@ -8,7 +8,7 @@ This data has existed since the observability work (AgentRun rows are
 written on every real pipeline run) but was previously invisible -- no
 endpoint ever exposed it. This is that endpoint.
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends  # noqa: I001
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -36,8 +36,8 @@ _PIPELINE_ORDER = [agent.value for agent in _NODE_TO_AGENT_NAME.values()]
 
 @router.get("/latency")
 def get_latency_stats(
-    db: Session = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),  # noqa: B008
+    user: dict = Depends(get_current_user),  # noqa: B008
 ) -> dict:
     installation_ids = user.get("installations", [])
     if not installation_ids:
@@ -127,8 +127,8 @@ def get_latency_stats(
 
 @router.get("/dashboard")
 def get_dashboard_stats(
-    db: Session = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),  # noqa: B008
+    user: dict = Depends(get_current_user),  # noqa: B008
 ) -> dict:
     installation_ids = user.get("installations", [])
     if not installation_ids:

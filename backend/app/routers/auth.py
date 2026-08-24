@@ -1,4 +1,4 @@
-import uuid
+import uuid  # noqa: I001
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -54,7 +54,7 @@ def login_github():
 
 
 @router.get("/login/github/callback")
-def login_github_callback(request: Request, code: str, state: str = None):
+def login_github_callback(request: Request, code: str, state: str = None):  # noqa: RUF013
     """Exchange the code for a token and set the session cookie."""
     settings = get_settings()
     cookie_state_token = request.cookies.get("oauth_state")
@@ -162,7 +162,7 @@ def logout():
 
 
 @router.get("/me")
-def get_me(user: dict = Depends(get_current_user)):
+def get_me(user: dict = Depends(get_current_user)):  # noqa: B008
     """Return the current user's info for the frontend to render the UI."""
     return {
         "login": user["login"],

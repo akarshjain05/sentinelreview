@@ -1,9 +1,6 @@
 import httpx
-import pytest
 import respx
-
 from app.knowledge.nvd_ingest import (
-    NVDIngestError,
     advisories_to_knowledge_documents,
     fetch_advisories,
 )

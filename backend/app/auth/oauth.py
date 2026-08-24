@@ -1,4 +1,4 @@
-import time
+import time  # noqa: I001
 
 import httpx
 import jwt

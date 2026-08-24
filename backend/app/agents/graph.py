@@ -16,7 +16,7 @@ it updates (LangGraph merges this into state). Nodes never mutate shared
 state directly and never call tools outside their own allowlist
 (enforced via `assert_tool_allowed`).
 """
-from __future__ import annotations
+from __future__ import annotations  # noqa: I001
 
 from langgraph.graph import END, StateGraph
 
@@ -132,7 +132,7 @@ def merge_analyzer_findings(
                 cluster = []
             cluster.append((analyzer_name, rf))
         if cluster:
-            rep_analyzer, rep_finding = cluster[0]
+            rep_analyzer, rep_finding = cluster[0]  # noqa: RUF059
             merged.append((file_path, rep_finding, [a for a, _ in cluster]))
 
     return merged + unmatchable
@@ -445,7 +445,7 @@ def build_graph(
                         else:
                             introduced_new_findings = True
                             log_output += f"{analyzer_name} found new issues in patched code.\n"
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     issue_resolved = False
                     log_output += f"Analyzer {analyzer_name} failed: {e}\n"
             

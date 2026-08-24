@@ -10,7 +10,7 @@ each node transition. That's a legitimate, real observability backend for
 a solo project's first version -- Langfuse remains a documented upgrade for
 when you want cross-review dashboards.
 """
-from __future__ import annotations
+from __future__ import annotations  # noqa: I001
 
 import time
 import uuid

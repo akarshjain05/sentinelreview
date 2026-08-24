@@ -1,15 +1,24 @@
-import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import StaticPool
 from datetime import datetime
 
-from app.db.models import Base, Installation, Repository, Severity, Review, Finding, ReviewStatus, PullRequest
+import pytest
+from app.db.models import (
+    Base,
+    Finding,
+    Installation,
+    PullRequest,
+    Repository,
+    Review,
+    ReviewStatus,
+    Severity,
+)
 from app.db.session import get_db
 from app.jobs.queue import get_review_queue
 from app.main import app
-import uuid
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
+
 
 @pytest.fixture
 def db_session():
@@ -62,7 +71,7 @@ def test_get_dashboard_stats(client: TestClient, db_session: Session):
     db_session.add(pr)
     db_session.flush()
 
-    dt = datetime(2026, 7, 20, 12, 0, 0)
+    dt = datetime(2026, 7, 20, 12, 0, 0)  # noqa: DTZ001
     
     rev = Review(
         id="rev_1",

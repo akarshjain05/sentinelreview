@@ -41,8 +41,8 @@ def fake_queue():
 
 @pytest.fixture(autouse=True)
 def override_auth(monkeypatch):
-    from app.main import app
     from app.auth.oauth import get_current_user
+    from app.main import app
     
     # By default, mock the current user to return a test user with access to a fake installation
     def override_get_current_user():

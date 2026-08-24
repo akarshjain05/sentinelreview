@@ -5,18 +5,17 @@ import json
 import httpx
 import pytest
 import respx
+from app.core.config import get_settings
+from app.db.models import Base, Installation, PullRequest, Repository, Review
+from app.db.session import get_db
+from app.jobs.queue import get_review_queue
+from app.main import app
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-
-from app.core.config import get_settings
-from app.db.models import Base, Installation, PullRequest, Repository, Review
-from app.db.session import get_db
-from app.jobs.queue import get_review_queue
-from app.main import app
 
 
 def _sign(secret: str, body: bytes) -> str:

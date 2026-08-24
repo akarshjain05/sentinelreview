@@ -10,7 +10,7 @@ FastAPI dependency, overridable in tests via app.dependency_overrides so
 most webhook tests don't need a real Redis running -- only the dedicated
 queue integration test does.
 """
-from __future__ import annotations
+from __future__ import annotations  # noqa: I001
 
 from redis import Redis
 from rq import Queue

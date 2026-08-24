@@ -1,7 +1,6 @@
 import httpx
 import pytest
 import respx
-
 from app.services.github_client import (
     GitHubAPIError,
     fetch_pr_files,

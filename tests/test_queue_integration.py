@@ -16,11 +16,6 @@ import uuid
 import httpx
 import pytest
 import respx
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
-from redis import Redis
-from rq import Queue, SimpleWorker
-
 from app.core.config import get_settings
 from app.db.models import (
     Base,
@@ -31,6 +26,10 @@ from app.db.models import (
     ReviewStatus,
 )
 from app.jobs.review_worker import run_review_job
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from redis import Redis
+from rq import Queue, SimpleWorker
 
 
 @pytest.fixture
@@ -39,7 +38,7 @@ def real_redis_connection():
     conn = Redis.from_url(settings.redis_url)
     try:
         conn.ping()
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         pytest.fail(
             f"This test requires a real Redis at {settings.redis_url} -- "
             f"start one with `redis-server --daemonize yes`. ({e})"

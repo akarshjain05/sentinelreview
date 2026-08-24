@@ -4,14 +4,13 @@ import httpx
 import jwt
 import pytest
 import respx
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
-
 from app.auth.github_app import (
     GitHubAppAuthError,
     exchange_installation_token,
     generate_app_jwt,
 )
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 
 
 @pytest.fixture(scope="module")

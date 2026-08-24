@@ -1,5 +1,4 @@
 import pytest
-
 from app.agents.hf_classifier import HFZeroShotClassifier
 
 

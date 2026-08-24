@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends  # noqa: I001
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -10,8 +10,8 @@ router = APIRouter(prefix="/repositories", tags=["repositories"])
 
 @router.get("")
 def list_repositories(
-    db: Session = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),  # noqa: B008
+    user: dict = Depends(get_current_user),  # noqa: B008
 ) -> list[dict]:
     """List all repositories the user has access to, with their review counts."""
     installations = user.get("installations", [])
