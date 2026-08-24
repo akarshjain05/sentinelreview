@@ -8,7 +8,7 @@ This data has existed since the observability work (AgentRun rows are
 written on every real pipeline run) but was previously invisible -- no
 endpoint ever exposed it. This is that endpoint.
 """
-from fastapi import APIRouter, Depends  # noqa: I001
+from fastapi import APIRouter, Depends
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 

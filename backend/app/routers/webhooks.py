@@ -13,7 +13,7 @@ webhooks must ack in <10s or GitHub considers them failed and retries,
 potentially causing duplicate reviews, so running the full LangGraph
 pipeline inline here would be wrong regardless of whether the queue is wired.
 """
-import hashlib  # noqa: I001
+import hashlib
 import hmac
 import uuid
 

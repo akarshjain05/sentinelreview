@@ -1,4 +1,4 @@
-import uuid  # noqa: I001
+import uuid
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -54,7 +54,7 @@ def login_github():
 
 
 @router.get("/login/github/callback")
-def login_github_callback(request: Request, code: str, state: str | None = None):  # noqa: RUF013  # type: ignore
+def login_github_callback(request: Request, code: str, state: str | None = None):  # type: ignore
     """Exchange the code for a token and set the session cookie."""
     settings = get_settings()
     cookie_state_token = request.cookies.get("oauth_state")

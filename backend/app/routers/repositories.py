@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends  # noqa: I001
+from fastapi import APIRouter, Depends
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 

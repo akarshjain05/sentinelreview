@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException  # noqa: I001
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 

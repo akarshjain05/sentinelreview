@@ -5,7 +5,7 @@ the eval harness actually produced on disk -- not a hardcoded/mocked
 metrics object -- so the Evaluation dashboard page always reflects a real
 run, or clearly reports that none exists yet rather than fabricating one.
 """
-import json  # noqa: I001
+import json
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException

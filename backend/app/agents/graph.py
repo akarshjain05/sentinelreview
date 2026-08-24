@@ -16,7 +16,7 @@ it updates (LangGraph merges this into state). Nodes never mutate shared
 state directly and never call tools outside their own allowlist
 (enforced via `assert_tool_allowed`).
 """
-from __future__ import annotations  # noqa: I001
+from __future__ import annotations
 
 from langgraph.graph import END, StateGraph
 
