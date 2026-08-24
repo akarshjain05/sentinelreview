@@ -42,7 +42,7 @@ def _verify_signature(payload_body: bytes, signature_header: str | None) -> bool
     settings = get_settings()
     if not settings.github_webhook_secret:
         # Fail closed in any environment that claims to be non-development.
-        return settings.environment == "development"
+        return settings.allow_unsigned_webhooks
     if not signature_header or not signature_header.startswith("sha256="):
         return False
     expected = hmac.new(

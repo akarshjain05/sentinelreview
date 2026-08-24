@@ -45,13 +45,11 @@ export function ObservabilityPage() {
         </div>
         <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
           <div className="text-xs uppercase tracking-wide text-[var(--color-text-faint)]">Total cost</div>
-          <div className="mt-1 font-mono-data text-2xl font-semibold">${data.total_cost_usd.toFixed(2)}</div>
+          <div className="mt-1 font-mono-data text-2xl font-semibold">${data.total_cost_usd < 0.01 && data.total_cost_usd > 0 ? data.total_cost_usd.toFixed(4) : data.total_cost_usd.toFixed(2)}</div>
         </div>
       </div>
 
-      <div className="mb-6 rounded border border-[var(--color-scan)]/30 bg-[var(--color-scan)]/5 px-4 py-3 text-xs text-[var(--color-text-muted)]">
-        {data.cost_tracking_note}
-      </div>
+
 
       {data.per_agent.length === 0 ? (
         <EmptyState

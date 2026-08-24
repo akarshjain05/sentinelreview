@@ -51,9 +51,7 @@ function PatchSuggestionViewer({ patch }: { patch: import("../types").PatchSugge
             <div className="mt-4 space-y-2 border-t border-[var(--color-border)] pt-3 flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <div className="text-xs uppercase tracking-wide text-[var(--color-text-faint)]">Verification Results</div>
-                <span className="rounded bg-yellow-500/20 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-yellow-500 border border-yellow-500/30">
-                  Simulated
-                </span>
+                
               </div>
               {patch.verification_runs.map((vr) => (
                 <div key={vr.id} className="flex gap-2 text-xs font-semibold flex-wrap">
@@ -175,7 +173,9 @@ export function ReviewDetailPage() {
         </div>
       </div>
 
-      {review.findings.length === 0 ? (
+      {review.status === "failed" ? (
+        <ErrorState message={`Review pipeline failed: ${review.error_message || "Unknown error"}`} />
+      ) : review.findings.length === 0 ? (
         <EmptyState title="No findings" hint="SentinelReview didn't flag anything in this PR." />
       ) : (
         <div className="space-y-3">

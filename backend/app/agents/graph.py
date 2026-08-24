@@ -161,15 +161,17 @@ def build_graph(
     touching any node logic.
     """
     settings = get_settings()
-    if settings.openai_api_key or settings.anthropic_api_key or settings.gemini_api_key or settings.groq_api_key:
-        if settings.openai_api_key:
+    if settings.openai_api_key or settings.anthropic_api_key or settings.gemini_api_key or settings.groq_api_key or settings.nvidia_api_key:
+        if settings.nvidia_api_key:
+            model = "nvidia_nim/meta/llama-3.1-70b-instruct"
+        elif settings.openai_api_key:
             model = "gpt-4o-mini"
         elif settings.anthropic_api_key:
             model = "claude-3-5-sonnet-20240620"
         elif settings.groq_api_key:
             model = "groq/qwen/qwen3.6-27b"
         else:
-            model = "gemini/gemini-flash-latest"
+            model = "gemini/gemini-flash-latest" 
             
         zero_shot = zero_shot or LiteLLMClassifier(model=model)
         generator = generator or LiteLLMClient(model=model)
@@ -251,7 +253,7 @@ def build_graph(
                     vulnerability_type=rf.cwe_id or rf.test_id,
                     cwe_id=rf.cwe_id,
                     confidence={"LOW": 0.4, "MEDIUM": 0.7, "HIGH": 0.9}.get(rf.confidence, 0.5),
-                    source="+".join(sorted(analyzer_names)),
+                    source="+".join(sorted(set(analyzer_names))),
                     code_snippet=rf.code_snippet,
                     explanation=rf.message,
                 )
@@ -390,18 +392,21 @@ def build_graph(
             
             # Extract patched file content
             patched_content = ""
+            reasoning = result.content
             match = re.search(r"<patched_file>\s*(.*?)\s*</patched_file>", result.content, re.DOTALL)
             if match:
                 patched_content = match.group(1)
+                reasoning = result.content.replace(match.group(0), "").strip()
+                # Remove prefixes like "Explanation:" or "Reasoning:" if they exist at the start
+                reasoning = re.sub(r"^(Explanation|Reasoning):\s*", "", reasoning, flags=re.IGNORECASE).strip()
             else:
-                # Fallback if the model doesn't use the tag
                 patched_content = result.content
             
             suggestions.append(
                 PatchSuggestion(
                     finding_index=idx,
                     diff=patched_content,
-                    reasoning=result.content,
+                    reasoning=reasoning,
                     cited_document_ids=finding.cited_document_ids,
                 )
             )

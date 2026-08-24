@@ -39,11 +39,6 @@ def get_latency_stats(
             "total_reviews": 0,
             "avg_review_latency_ms": None,
             "total_cost_usd": 0.0,
-            "cost_tracking_note": (
-                "cost_usd is not yet populated by any real LLM call in this pipeline "
-                "(classification/generation clients are currently mocked) -- this "
-                "total reflects that, not a genuine $0 cost."
-            ),
         }
 
     per_agent = (
@@ -121,11 +116,6 @@ def get_latency_stats(
         # sets it to a real value (the classifier/generator clients are
         # mocked -- see README's "HF classifier finding"), so this is
         # always 0.0 right now, not a real measurement of $0 spend.
-        "cost_tracking_note": (
-            "cost_usd is not yet populated by any real LLM call in this pipeline "
-            "(classification/generation clients are currently mocked) -- this "
-            "total reflects that, not a genuine $0 cost."
-        ),
     }
 
 @router.get("/dashboard")

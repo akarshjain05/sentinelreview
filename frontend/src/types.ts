@@ -32,6 +32,7 @@ export interface ReviewSummary {
   pr_title: string | null;
   started_at: string | null;
   completed_at: string | null;
+  error_message: string | null;
   total_latency_ms: number;
   finding_count: number;
   severity_counts: SeverityCounts;
@@ -97,7 +98,6 @@ export interface LatencyStatsResponse {
   total_reviews: number;
   avg_review_latency_ms: number | null;
   total_cost_usd: number;
-  cost_tracking_note: string;
 }
 
 export interface EvalMetrics {

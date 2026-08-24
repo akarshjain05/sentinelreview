@@ -152,15 +152,15 @@ class LiteLLMClassifier:
     def classify(self, text: str, candidate_labels: list[str]) -> tuple[list[ClassificationResult], int, float]:
         labels_str = ", ".join(candidate_labels)
         prompt = (
-            f"Classify the following text into exactly one of these labels: {labels_str}.\n"
-            f"Respond with only the label name. If none fit perfectly, pick the closest one.\n\n"
+            f"Classify the following text into the provided candidate labels: {labels_str}.\n"
+            f"Respond ONLY with a valid JSON object where keys are the candidate labels and values are confidence scores (float between 0.0 and 1.0 summing to 1.0).\n"
+            f"Do not include markdown blocks or any other text.\n\n"
             f"Text:\n{text}"
         )
         response = completion(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0,
-            max_tokens=10,
         )
         content = (response.choices[0].message.content or "").strip()
         try:
@@ -170,10 +170,25 @@ class LiteLLMClassifier:
         tokens = response.usage.total_tokens if response.usage else 0
         
         results = []
-        for label in candidate_labels:
-            if label.lower() == content.lower():
-                results.append(ClassificationResult(label=label, score=0.9))
-            else:
-                results.append(ClassificationResult(label=label, score=0.1))
+        import json
+        import re
+        
+        # Try to extract JSON from markdown if present
+        json_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", content, re.DOTALL)
+        if json_match:
+            content = json_match.group(1)
+            
+        try:
+            parsed = json.loads(content)
+            for label in candidate_labels:
+                score = float(parsed.get(label, 0.0))
+                results.append(ClassificationResult(label=label, score=score))
+        except Exception:
+            # Fallback if JSON parsing fails
+            for label in candidate_labels:
+                if label.lower() in content.lower():
+                    results.append(ClassificationResult(label=label, score=0.9))
+                else:
+                    results.append(ClassificationResult(label=label, score=0.1))
         
         return sorted(results, key=lambda r: r.score, reverse=True), tokens, cost

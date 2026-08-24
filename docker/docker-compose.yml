@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: sentinel
       POSTGRES_DB: sentinelreview
     ports:
-      - "5433:5432"
+      - "5435:5432"
     volumes:
       - sentinel_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -18,7 +18,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6380:6379"
+      - "6382:6379"
 
   backend:
     build:
@@ -93,6 +93,13 @@ services:
     volumes:
       - ../frontend/src:/app/src
       - ../frontend/index.html:/app/index.html
+
+  smee:
+    image: node:20-alpine
+    depends_on:
+      backend:
+        condition: service_healthy
+    command: ["npx", "-y", "smee-client", "--url", "https://smee.io/6v7cDTXMc4YGoJDh", "--target", "http://backend:8000/webhooks/github"]
 
 volumes:
   sentinel_pgdata:

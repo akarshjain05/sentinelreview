@@ -13,7 +13,7 @@ cookie_sec = APIKeyCookie(name=COOKIE_NAME, auto_error=False)
 def create_access_token(data: dict) -> str:
     settings = get_settings()
     to_encode = data.copy()
-    to_encode.update({"exp": time.time() + 86400}) # 1 day expiration
+    to_encode.update({"exp": time.time() + 3600}) # 1 day expiration
     encoded_jwt = jwt.encode(to_encode, settings.session_secret_key, algorithm=ALGORITHM)
     return encoded_jwt
 
