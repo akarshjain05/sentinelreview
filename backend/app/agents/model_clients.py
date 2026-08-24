@@ -17,8 +17,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Protocol
-import litellm
+
 from litellm import completion, completion_cost
+
 
 @dataclass
 class GenerationResult:

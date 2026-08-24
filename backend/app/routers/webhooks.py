@@ -26,7 +26,6 @@ from app.core.config import get_settings
 from app.db.models import Installation, PullRequest, Repository, Review, ReviewStatus
 from app.db.session import get_db
 from app.jobs.queue import get_review_queue
-from app.jobs.review_worker import run_review_job
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 

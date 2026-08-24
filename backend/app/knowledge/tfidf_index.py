@@ -65,7 +65,7 @@ class TfidfKnowledgeIndex:
         return results
 
     @classmethod
-    def from_seed_corpus(cls) -> "TfidfKnowledgeIndex":
+    def from_seed_corpus(cls) -> TfidfKnowledgeIndex:
         from app.knowledge.seed_corpus import SEED_DOCUMENTS
 
         docs = [
@@ -80,7 +80,7 @@ class TfidfKnowledgeIndex:
         return cls(docs)
 
     @classmethod
-    def from_db(cls, db, *, include_seed_corpus: bool = True) -> "TfidfKnowledgeIndex":
+    def from_db(cls, db, *, include_seed_corpus: bool = True) -> TfidfKnowledgeIndex:
         """
         Build the index from real ingested KnowledgeDocument rows (e.g. live
         GHSA advisories pulled via app/knowledge/ingest_cli.py), optionally

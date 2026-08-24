@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.db.models import Installation, Repository, Review, PullRequest
-from app.db.session import get_db
 from app.auth.oauth import get_current_user
+from app.db.models import Installation, PullRequest, Repository, Review
+from app.db.session import get_db
 
 router = APIRouter(prefix="/repositories", tags=["repositories"])
 

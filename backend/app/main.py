@@ -2,7 +2,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
-from app.routers import auth, evaluation, health, observability, repositories, reviews, webhooks
+from app.routers import (
+    auth,
+    evaluation,
+    health,
+    observability,
+    repositories,
+    reviews,
+    webhooks,
+)
 from app.routers import settings as settings_router
 
 settings = get_settings()

@@ -8,7 +8,8 @@ run, or clearly reports that none exists yet rather than fabricating one.
 import json
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
+
 from app.auth.oauth import get_current_user
 
 router = APIRouter(prefix="/evaluation", tags=["evaluation"])

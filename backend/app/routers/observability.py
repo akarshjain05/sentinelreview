@@ -13,7 +13,14 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.auth.oauth import get_current_user
-from app.db.models import AgentRun, Review, Finding, Repository, Installation, PullRequest
+from app.db.models import (
+    AgentRun,
+    Finding,
+    Installation,
+    PullRequest,
+    Repository,
+    Review,
+)
 from app.db.session import get_db
 from app.services.pipeline_runner import _NODE_TO_AGENT_NAME
 

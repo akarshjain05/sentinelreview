@@ -98,7 +98,7 @@ def fetch_advisories(
                 metrics = cve_data.get("metrics", {})
                 severity = "unknown"
                 for cvss_version in ["cvssMetricV31", "cvssMetricV30", "cvssMetricV2"]:
-                    if cvss_version in metrics and metrics[cvss_version]:
+                    if metrics.get(cvss_version):
                         metric = metrics[cvss_version][0]
                         cvss_data = metric.get("cvssData", {})
                         if "baseSeverity" in cvss_data:

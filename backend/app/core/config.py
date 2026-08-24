@@ -5,7 +5,8 @@ All external integrations (GitHub App creds, LLM provider keys, DB URLs) are
 read from environment variables so nothing secret ever lives in source.
 """
 from functools import lru_cache
-from pydantic import field_validator, model_validator
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 

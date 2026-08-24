@@ -1,8 +1,10 @@
 import time
+
 import httpx
 import jwt
-from fastapi import Request, HTTPException
+from fastapi import HTTPException, Request
 from fastapi.security import APIKeyCookie
+
 from app.core.config import get_settings
 
 ALGORITHM = "HS256"

@@ -3,11 +3,17 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 
-from app.db.models import KnowledgeDocument, PullRequest, Review, ReviewStatus, Repository, Installation
+from app.auth.oauth import get_current_user
+from app.db.models import (
+    Installation,
+    KnowledgeDocument,
+    PullRequest,
+    Repository,
+    Review,
+    ReviewStatus,
+)
 from app.db.session import get_db
 from app.jobs.queue import get_review_queue
-from app.jobs.review_worker import run_review_job
-from app.auth.oauth import get_current_user
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 

@@ -7,11 +7,16 @@ already tested individually; this wires them into one real, callable job.
 """
 from __future__ import annotations
 
-from app.auth.github_app import GitHubAppAuthError, get_installation_token
 from app.agents.state import ChangedFile, ReviewState
+from app.auth.github_app import GitHubAppAuthError, get_installation_token
 from app.db.models import Review, ReviewStatus
 from app.db.session import SessionLocal
-from app.services.github_client import GitHubAPIError, fetch_pr_files, is_doc_file, is_test_file
+from app.services.github_client import (
+    GitHubAPIError,
+    fetch_pr_files,
+    is_doc_file,
+    is_test_file,
+)
 from app.services.pipeline_runner import run_review_with_observability
 
 
@@ -98,7 +103,6 @@ def run_review_job(review_id: str) -> None:
                 # but we could log it or store the error message.
                 import logging
                 logging.error(f"Failed to post comment to PR: {e}")
-                pass
 
     finally:
         db.close()

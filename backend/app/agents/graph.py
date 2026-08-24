@@ -23,13 +23,12 @@ from langgraph.graph import END, StateGraph
 from app.agents.diff_utils import extract_added_lines
 from app.agents.model_clients import (
     GenerationClient,
+    LiteLLMClassifier,
+    LiteLLMClient,
     MockGenerationClient,
     MockZeroShotClassifier,
     ZeroShotClassifier,
-    LiteLLMClient,
-    LiteLLMClassifier,
 )
-from app.core.config import get_settings
 from app.agents.state import (
     Finding,
     KnowledgeSnippet,
@@ -38,8 +37,14 @@ from app.agents.state import (
     SecurityFlag,
     VerificationOutcome,
 )
+from app.core.config import get_settings
 from app.knowledge.tfidf_index import TfidfKnowledgeIndex
-from app.sandbox.analyzers import BanditAnalyzer, RawFinding, SemgrepAnalyzer, StaticAnalyzer
+from app.sandbox.analyzers import (
+    BanditAnalyzer,
+    RawFinding,
+    SemgrepAnalyzer,
+    StaticAnalyzer,
+)
 from app.security.guardrails import assert_tool_allowed, sanitize_untrusted_text
 
 CWE_CANDIDATE_LABELS = [

@@ -19,13 +19,15 @@ from enum import Enum
 from sqlalchemy import (
     Boolean,
     DateTime,
-    Enum as SAEnum,
     Float,
     ForeignKey,
     Integer,
     String,
     Text,
     UniqueConstraint,
+)
+from sqlalchemy import (
+    Enum as SAEnum,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 

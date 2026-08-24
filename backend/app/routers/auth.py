@@ -1,13 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from fastapi.responses import RedirectResponse
-import httpx
 import uuid
-import json
-from redis import Redis
-from app.core.config import get_settings
 
+import httpx
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import RedirectResponse
+from redis import Redis
+
+from app.auth.oauth import (
+    COOKIE_NAME,
+    create_access_token,
+    get_current_user,
+    get_user_installations,
+)
 from app.core.config import get_settings
-from app.auth.oauth import create_access_token, get_current_user, get_user_installations, COOKIE_NAME
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -25,7 +29,9 @@ def login_github():
     url = f"https://github.com/login/oauth/authorize?client_id={settings.github_client_id}&state={state}"
     
     # Cryptographically sign the CSRF state to prevent cookie-forcing attacks
-    import time, jwt
+    import time
+
+    import jwt
     signed_state = jwt.encode(
         {"state": state, "exp": time.time() + 600}, 
         settings.session_secret_key, 

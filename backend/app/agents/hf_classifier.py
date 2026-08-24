@@ -23,7 +23,7 @@ installed -- never pay that cost or need the dependency at all.
 """
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 from app.agents.model_clients import ClassificationResult
 

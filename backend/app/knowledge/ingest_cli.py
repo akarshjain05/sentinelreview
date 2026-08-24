@@ -20,12 +20,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from sqlalchemy import select  # noqa: E402
-from sqlalchemy.orm import Session  # noqa: E402
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from app.db.models import KnowledgeDocument  # noqa: E402
-from app.db.session import SessionLocal, init_db  # noqa: E402
-from app.knowledge import ghsa_ingest, nvd_ingest, osv_ingest  # noqa: E402
+from app.db.models import KnowledgeDocument
+from app.db.session import SessionLocal, init_db
+from app.knowledge import ghsa_ingest, nvd_ingest, osv_ingest
 
 
 def upsert_documents(db: Session, docs: list[dict]) -> tuple[int, int]:
