@@ -8,16 +8,6 @@
   </p>
 </div>
 
-## About
-
-SentinelReview is a powerful, autonomous security code review tool designed to catch vulnerabilities directly in your GitHub Pull Requests. 
-
-It combines robust static analysis with retrieval-augmented generation (RAG) over authoritative sources (CWE, OWASP, GHSA) and a 7-agent LangGraph pipeline. SentinelReview doesn't just flag issues—it grounds every claim in an authoritative source, generates a patch, verifies the patch in a secure sandbox, and posts a structured PR review.
-
-### Topics
-`security` `code-review` `artificial-intelligence` `langgraph` `rag` `static-analysis` `github-actions` `devsecops` `python` `react` `fastapi`
-
----
 
 ## Architecture Overview
 
