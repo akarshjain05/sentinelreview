@@ -186,3 +186,65 @@ def test_update_repository_settings(client: TestClient, db_session: Session):
         headers={"Authorization": 'Bearer {"login": "testuser"}'}
     )
     assert response.status_code == 403
+
+def test_update_installation_settings_403_when_not_in_user_installations(client: TestClient, db_session: Session):
+    """
+    Explicitly test the 403 path for /settings/installations/{id} by removing 
+    the installation ID from the mocked user's authorized list.
+    """
+    from app.auth.oauth import get_current_user
+    
+    inst = Installation(
+        github_installation_id=4242,
+        account_login="unauth_org"
+    )
+    db_session.add(inst)
+    db_session.commit()
+
+    # Override auth to NOT include 4242
+    app.dependency_overrides[get_current_user] = lambda: {
+        "login": "testuser",
+        "installations": [1] # doesn't include 4242
+    }
+
+    response = client.patch(
+        f"/settings/installations/{inst.id}",
+        json={"notify_on_findings": True}
+    )
+    assert response.status_code == 403
+    app.dependency_overrides.pop(get_current_user, None)
+
+def test_update_repository_settings_403_when_not_in_user_installations(client: TestClient, db_session: Session):
+    """
+    Explicitly test the 403 path for /settings/repositories/{id} by removing 
+    the installation ID from the mocked user's authorized list.
+    """
+    from app.auth.oauth import get_current_user
+    
+    inst = Installation(
+        github_installation_id=4242,
+        account_login="unauth_org"
+    )
+    db_session.add(inst)
+    db_session.flush()
+
+    repo = Repository(
+        installation_id=inst.id,
+        github_repo_id=9999,
+        full_name="unauth_org/repo"
+    )
+    db_session.add(repo)
+    db_session.commit()
+
+    # Override auth to NOT include 4242
+    app.dependency_overrides[get_current_user] = lambda: {
+        "login": "testuser",
+        "installations": [1] # doesn't include 4242
+    }
+
+    response = client.patch(
+        f"/settings/repositories/{repo.id}",
+        json={"scan_enabled": True}
+    )
+    assert response.status_code == 403
+    app.dependency_overrides.pop(get_current_user, None)

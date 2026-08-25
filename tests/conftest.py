@@ -1,4 +1,6 @@
 import os
+os.environ["TESTING"] = "1"
+import os
 import sys
 
 import pytest
@@ -59,3 +61,17 @@ def override_auth(monkeypatch):
     
     # Clean up after test
     app.dependency_overrides.pop(get_current_user, None)
+from app.core.config import Settings
+
+@pytest.fixture(autouse=True)
+def _setup_test_env(monkeypatch):
+    import os
+    os.environ["TESTING"] = "1"
+    
+    # We clear the LRU cache so get_settings() re-evaluates
+    from app.core.config import get_settings
+    get_settings.cache_clear()
+
+
+
+

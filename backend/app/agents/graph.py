@@ -21,35 +21,37 @@ def get_cached_knowledge_index():
 def build_graph(
     static_analyzers: dict[str, Any] | None = None,
     knowledge_index: TfidfKnowledgeIndex | None = None,
+    zero_shot: Any | None = None,
+    generator: Any | None = None,
 ) -> StateGraph:
     """
     Constructs the LangGraph state machine. Nodes are extracted into app.agents.nodes.*.
     """
     from app.agents.model_clients import (
-        AnthropicClient,
-        GeminiClient,
-        GroqClient,
-        MockModelClient,
-        NVIDIAClient,
-        OpenAIClient,
+        LiteLLMClient,
+        LiteLLMClassifier,
+        MockZeroShotClassifier,
+        MockGenerationClient,
     )
 
     settings = get_settings()
     if settings.openai_api_key or settings.anthropic_api_key or settings.gemini_api_key or settings.groq_api_key or settings.nvidia_api_key:
         if settings.nvidia_api_key:
-            classifier = NVIDIAClient()
+            model = "nvidia_nim/nvidia/nemotron-4-340b-instruct"
         elif settings.openai_api_key:
-            classifier = OpenAIClient(settings.openai_api_key)
+            model = "gpt-4o-mini"
         elif settings.anthropic_api_key:
-            classifier = AnthropicClient(settings.anthropic_api_key)
+            model = "claude-3-haiku-20240307"
         elif settings.groq_api_key:
-            classifier = GroqClient(settings.groq_api_key)
+            model = "groq/llama3-8b-8192"
         else:
-            classifier = GeminiClient(settings.gemini_api_key) # type: ignore
-        generator = classifier
+            model = "gemini/gemini-1.5-flash"
+        
+        classifier = zero_shot or LiteLLMClassifier(model=model)
+        generator = generator or LiteLLMClient(model=model)
     else:
-        classifier = MockModelClient(mode="classifier")
-        generator = MockModelClient(mode="generator")
+        classifier = zero_shot or MockZeroShotClassifier()
+        generator = generator or MockGenerationClient()
 
     static_analyzers = static_analyzers or get_default_analyzers()
     knowledge_index = knowledge_index or get_cached_knowledge_index()

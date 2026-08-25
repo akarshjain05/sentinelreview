@@ -43,7 +43,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from fixtures.python_vuln_benchmark import BENCHMARK_CASES  # noqa: E402
 
-from app.agents.graph import CWE_CANDIDATE_LABELS, merge_analyzer_findings  # noqa: E402
+from app.agents.graph import CWE_CANDIDATE_LABELS
+from app.services.static_analysis import merge_analyzer_findings  # noqa: E402
 from app.sandbox.analyzers import BanditAnalyzer, SemgrepAnalyzer  # noqa: E402
 
 

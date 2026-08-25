@@ -60,7 +60,13 @@ def test_pipeline_run_writes_real_agent_run_rows(db_session):
         ],
     )
 
-    fast_graph = build_graph(static_analyzers={"mock": MockStaticAnalyzer()})
+    import time
+    class SlowMockStaticAnalyzer(MockStaticAnalyzer):
+        def analyze_files(self, files):
+            time.sleep(0.1)
+            return super().analyze_files(files)
+
+    fast_graph = build_graph(static_analyzers={"mock": SlowMockStaticAnalyzer()})
     run_review_with_observability(state, db=db_session, review_id=review_id, graph=fast_graph)
 
     from app.db.models import AgentRun
@@ -74,6 +80,10 @@ def test_pipeline_run_writes_real_agent_run_rows(db_session):
 
     # Every row should have a real (non-negative) latency captured.
     assert all(r.latency_ms is not None and r.latency_ms >= 0 for r in runs)
+    
+    # Static analysis should reflect the 100ms+ sleep, proving we measure real wall-clock time
+    static_analysis_run = next(r for r in runs if r.agent_name.value == "static_analysis")
+    assert static_analysis_run.latency_ms >= 100, f"Expected >= 100ms, got {static_analysis_run.latency_ms}ms (regression of timing issue?)"
 
     review = db_session.get(Review, review_id)
     assert review.status == ReviewStatus.COMPLETED

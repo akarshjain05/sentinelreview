@@ -121,7 +121,7 @@ def test_installation_webhook_deleted_removes_installation(client, db_session):
 
 # ---- Pull request events ----------------------------------------------------
 
-def _pr_payload(number=42, repo_id=5001, action="opened") -> dict:
+def _pr_payload(number=42, repo_id=5001, action="opened", head_sha="abc123") -> dict:
     return {
         "action": action,
         "installation": {"id": 9001},
@@ -129,7 +129,7 @@ def _pr_payload(number=42, repo_id=5001, action="opened") -> dict:
         "pull_request": {
             "number": number,
             "title": "Add search endpoint",
-            "head": {"sha": "abc123"},
+            "head": {"sha": head_sha},
             "base": {"sha": "def456"},
             "user": {"login": "akarsh"},
         },
@@ -166,7 +166,7 @@ def test_pull_request_webhook_creates_pr_and_review_and_reports_auth_failure_whe
     from app.core.config import Settings
     monkeypatch.delenv("GITHUB_APP_ID", raising=False)
     monkeypatch.delenv("GITHUB_PRIVATE_KEY", raising=False)
-    monkeypatch.setattr("app.core.config.get_settings", lambda: Settings(_env_file=None))
+    monkeypatch.setattr("app.core.config.get_settings", lambda: Settings(_env_file=None, session_secret_key="x" * 32))
 
     _post_webhook(client, "installation", _INSTALLATION_PAYLOAD)
 
@@ -198,7 +198,7 @@ def test_pull_request_webhook_creates_pr_and_review_and_reports_auth_failure_whe
 def test_pull_request_webhook_upserts_existing_pr_rather_than_duplicating(client, db_session):
     _post_webhook(client, "installation", _INSTALLATION_PAYLOAD)
     _post_webhook(client, "pull_request", _pr_payload(action="opened"))
-    _post_webhook(client, "pull_request", _pr_payload(action="synchronize"))  # e.g. a new commit pushed
+    _post_webhook(client, "pull_request", _pr_payload(action="synchronize", head_sha="newsha123"))  # e.g. a new commit pushed
 
     assert db_session.query(PullRequest).filter_by(number=42).count() == 1
     # Each triggering event still gets its own Review row (a fresh scan per push).
@@ -235,3 +235,48 @@ def test_pull_request_webhook_acquires_real_installation_token_when_configured(c
     assert data["installation_token_expires_at"] == "2026-07-10T12:00:00Z"
 
     get_settings.cache_clear()
+def test_pull_request_webhook_ignores_redelivery_for_same_sha(client, db_session):
+    """
+    If GitHub sends a duplicate 'opened' or 'synchronize' event for the exact
+    same commit SHA on the same PR (e.g. redelivery of a failed webhook, or
+    just duplicate events), we should not enqueue a duplicate pipeline run.
+    """
+    from app.db.models import Installation, Repository, PullRequest, Review
+    import uuid
+
+    # Setup installation/repo
+    inst = Installation(id=str(uuid.uuid4()), github_installation_id=123, account_login="org")
+    db_session.add(inst)
+    repo = Repository(id=str(uuid.uuid4()), installation_id=inst.id, github_repo_id=999, full_name="org/repo", is_active=True, scan_enabled=True)
+    db_session.add(repo)
+
+    # Pr and Review already exist for head_sha "abcd123"
+    pr = PullRequest(id=str(uuid.uuid4()), repository_id=repo.id, number=42, title="t", head_sha="abcd123", base_sha="xyz", author_login="author")
+    db_session.add(pr)
+
+    review = Review(id=str(uuid.uuid4()), pull_request_id=pr.id, triggered_sha="abcd123")
+    db_session.add(review)
+    db_session.commit()
+
+    payload = {
+        "action": "synchronize",
+        "installation": {"id": 123},
+        "repository": {"id": 999, "full_name": "org/repo"},
+        "pull_request": {
+            "number": 42,
+            "title": "t",
+            "head": {"sha": "abcd123"},
+            "base": {"sha": "xyz"},
+            "user": {"login": "author"}
+        }
+    }
+
+    response = _post_webhook(client, "pull_request", payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ignored"
+    assert "already exists" in data["reason"]
+
+    # Verify a second Review wasn't added
+    reviews = db_session.query(Review).filter_by(pull_request_id=pr.id).all()
+    assert len(reviews) == 1

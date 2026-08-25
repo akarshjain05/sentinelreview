@@ -94,7 +94,7 @@ def test_get_installation_token_raises_clear_error_when_unconfigured(monkeypatch
     # Provide a completely clean Settings object without loading .env
     monkeypatch.delenv("GITHUB_APP_ID", raising=False)
     monkeypatch.delenv("GITHUB_PRIVATE_KEY", raising=False)
-    monkeypatch.setattr("app.core.config.get_settings", lambda: Settings(_env_file=None))
+    monkeypatch.setattr("app.core.config.get_settings", lambda: Settings(_env_file=None, session_secret_key="x"*32))
 
     with pytest.raises(GitHubAppAuthError, match="not configured"):
         get_installation_token(9001)

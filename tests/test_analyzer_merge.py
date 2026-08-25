@@ -1,4 +1,4 @@
-from app.agents.graph import merge_analyzer_findings
+from app.services.static_analysis import merge_analyzer_findings
 from app.sandbox.analyzers import RawFinding
 
 

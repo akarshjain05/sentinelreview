@@ -1,3 +1,5 @@
+
+
 from app.agents.graph import build_graph
 from app.agents.state import ChangedFile, ReviewState
 
@@ -36,7 +38,7 @@ def test_pipeline_runs_end_to_end_and_flags_sql_injection():
 
     # Static analysis + classification should surface the SQL injection.
     assert len(result["findings"]) >= 1
-    vuln_types = {f.vulnerability_type for f in result["findings"]}
+    vuln_types = {f.cwe_id for f in result["findings"]}
     assert "CWE-89" in vuln_types or "sql_injection" in vuln_types
 
     # A grounded patch suggestion should exist, citing the retrieved CWE doc.
@@ -84,3 +86,20 @@ def test_clean_pr_produces_no_findings():
     result = graph.invoke(state)
     assert result["findings"] == []
     assert "No security findings" in result["review_markdown"]
+def test_pipeline_fails_cleanly_on_analyzer_error():
+    """
+    Tests that a crashing static analyzer raises an exception to fail the pipeline run,
+    rather than failing silently and returning 0 findings.
+    """
+    from app.sandbox.analyzers import MockStaticAnalyzer
+    import pytest
+
+    class CrashingAnalyzer(MockStaticAnalyzer):
+        def analyze_files(self, files):
+            raise RuntimeError("Subprocess timeout or crash")
+
+    graph = build_graph(static_analyzers={"crashy": CrashingAnalyzer()})
+    state = _sample_state()
+
+    with pytest.raises(RuntimeError, match="failed to run"):
+        graph.invoke(state)

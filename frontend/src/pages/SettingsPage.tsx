@@ -130,6 +130,7 @@ export function SettingsPage() {
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input 
                       type="checkbox" 
+                      aria-label={`Toggle notifications for ${inst.account_login}`}
                       className="sr-only peer"
                       checked={inst.notify_on_findings}
                       onChange={() => handleToggleNotify(inst)}
@@ -197,6 +198,7 @@ export function SettingsPage() {
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input 
                           type="checkbox" 
+                          aria-label={`Toggle scan enabled for ${repo.full_name}`}
                           className="sr-only peer"
                           checked={repo.scan_enabled}
                           onChange={(e) => handleUpdateRepo(repo, { scan_enabled: e.target.checked })}
@@ -208,6 +210,7 @@ export function SettingsPage() {
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input 
                           type="checkbox" 
+                          aria-label={`Toggle auto patch for ${repo.full_name}`}
                           className="sr-only peer"
                           checked={repo.auto_patch_enabled}
                           onChange={(e) => handleUpdateRepo(repo, { auto_patch_enabled: e.target.checked })}

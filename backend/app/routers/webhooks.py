@@ -168,6 +168,20 @@ def _handle_pull_request_event(payload: dict, db: Session, queue) -> dict:
         pull_request.title = pr_payload["title"]
         pull_request.head_sha = pr_payload["head"]["sha"]
 
+    existing_review = db.scalar(
+        select(Review).where(
+            Review.pull_request_id == pull_request.id,
+            Review.triggered_sha == pr_payload["head"]["sha"],
+            Review.is_manual_rerun == False
+        )
+    )
+    if existing_review:
+        return {
+            "status": "ignored",
+            "reason": f"Review for SHA {pr_payload['head']['sha']} already exists (redelivery or duplicate event).",
+            "review_id": existing_review.id
+        }
+
     review = Review(
         id=str(uuid.uuid4()), pull_request_id=pull_request.id,
         triggered_sha=pr_payload["head"]["sha"], status=ReviewStatus.QUEUED,

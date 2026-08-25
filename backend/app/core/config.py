@@ -11,7 +11,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".env.test" if __import__("os").environ.get("TESTING") == "1" else ".env", extra="ignore")
 
     # App
     app_name: str = "SentinelReview"

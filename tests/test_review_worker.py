@@ -99,7 +99,7 @@ def test_job_marks_review_failed_when_repository_has_no_installation(db_session)
 
 def test_job_marks_review_failed_when_github_app_unconfigured(db_session, monkeypatch):
     from app.core.config import Settings
-    monkeypatch.setattr("app.core.config.get_settings", lambda: Settings(_env_file=None))
+    monkeypatch.setattr("app.core.config.get_settings", lambda: Settings(_env_file=None, session_secret_key="x"*32))
 
     review_id = _seed(db_session)
 
@@ -191,5 +191,43 @@ def test_job_runs_real_pipeline_end_to_end_and_detects_real_vulnerability(db_ses
     # Real observability: AgentRun rows for the full 7-stage pipeline.
     agent_runs = db_session.query(AgentRun).filter_by(review_id=review_id).all()
     assert len(agent_runs) == 7
+
+    get_settings.cache_clear()
+@respx.mock
+def test_job_marks_review_failed_when_post_pr_review_comment_fails(db_session, monkeypatch, rsa_keypair):
+    """
+    Tests that if the pipeline succeeds but posting the comment back to GitHub
+    fails, the review itself is marked FAILED rather than silently swallowed.
+    """
+    monkeypatch.setenv("GITHUB_APP_ID", "123456")
+    monkeypatch.setenv("GITHUB_PRIVATE_KEY", rsa_keypair)
+    monkeypatch.setenv("GEMINI_API_KEY", "")
+    monkeypatch.setenv("OPENAI_API_KEY", "")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "")
+    get_settings.cache_clear()
+
+    respx.post("https://api.github.com/app/installations/9001/access_tokens").mock(
+        return_value=httpx.Response(201, json={"token": "ghs_test", "expires_at": "2026-08-01T00:00:00Z"})
+    )
+    respx.get("https://api.github.com/repos/akarsh/sentinelreview/pulls/42/files").mock(
+        return_value=httpx.Response(200, json=[
+            {
+                "filename": "app/search.py",
+                "status": "modified",
+                "patch": '+cursor.execute("SELECT * FROM users WHERE name = " + name)\n',
+            }
+        ])
+    )
+    # Mock the comment post to fail with 500
+    respx.post("https://api.github.com/repos/akarsh/sentinelreview/issues/42/comments").mock(
+        return_value=httpx.Response(500, json={"message": "Internal Server Error"})
+    )
+
+    review_id = _seed(db_session)
+    run_review_job(review_id)
+
+    review = db_session.get(Review, review_id)
+    assert review.status == ReviewStatus.FAILED
+    assert "Failed to post comment to PR" in review.error_message
 
     get_settings.cache_clear()

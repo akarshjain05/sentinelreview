@@ -56,6 +56,7 @@ def upsert_documents(db: Session, docs: list[dict]) -> tuple[int, int]:
     for doc in docs:
         deduped[(doc["source"], doc["external_id"])] = doc
 
+    from sqlalchemy.exc import IntegrityError
     created, updated = 0, 0
     for doc in deduped.values():
         existing = db.scalar(
@@ -70,6 +71,7 @@ def upsert_documents(db: Session, docs: list[dict]) -> tuple[int, int]:
             existing.cwe_ids = doc["cwe_ids"]
             existing.url = doc["url"]
             updated += 1
+            db.flush()
         else:
             db.add(KnowledgeDocument(
                 source=doc["source"],
@@ -79,8 +81,26 @@ def upsert_documents(db: Session, docs: list[dict]) -> tuple[int, int]:
                 cwe_ids=doc["cwe_ids"],
                 url=doc["url"],
             ))
-            created += 1
-        db.flush()  # make this write visible to the next iteration's SELECT
+            try:
+                db.flush()  # make this write visible to the next iteration's SELECT
+                created += 1
+            except IntegrityError:
+                # Concurrent ingest process beat us to the INSERT. Rollback this statement
+                # and apply as an UPDATE instead.
+                db.rollback()
+                existing = db.scalar(
+                    select(KnowledgeDocument).where(
+                        KnowledgeDocument.source == doc["source"],
+                        KnowledgeDocument.external_id == doc["external_id"],
+                    )
+                )
+                if existing:
+                    existing.title = doc["title"]
+                    existing.content = doc["content"]
+                    existing.cwe_ids = doc["cwe_ids"]
+                    existing.url = doc["url"]
+                    updated += 1
+                    db.flush()
     db.commit()
     return created, updated
 
