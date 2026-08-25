@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.auth.oauth import get_current_user
 from app.db.models import (
@@ -27,32 +27,38 @@ def _severity_counts(findings) -> dict:
     return counts
 
 
-def _resolve_citations(db: Session, cited_document_ids: str | None) -> list[dict]:
-    """
-    Resolves a Finding's comma-separated cited_document_ids (e.g. "CWE-89")
-    into the actual KnowledgeDocument rows they reference -- title, source,
-    url -- rather than making the frontend deal with bare ID strings it
-    can't do anything with. Real citation data, from the actual retrieval
-    step (app/agents/graph.py's retrieval_node), not fabricated per-finding.
-    """
-    if not cited_document_ids:
-        return []
-    ids = [i.strip() for i in cited_document_ids.split(",") if i.strip()]
-    if not ids:
-        return []
-
-    docs = db.query(KnowledgeDocument).filter(KnowledgeDocument.external_id.in_(ids)).all()
-    return [
-        {"external_id": d.external_id, "title": d.title, "source": d.source, "url": d.url}
+def _resolve_all_citations(db: Session, all_id_strings: list[str | None]) -> dict[str, dict]:
+    """Batch resolves multiple comma-separated citation strings into a single lookup dict."""
+    ids_to_fetch = set()
+    for id_str in all_id_strings:
+        if id_str:
+            for i in id_str.split(","):
+                if i.strip():
+                    ids_to_fetch.add(i.strip())
+    
+    if not ids_to_fetch:
+        return {}
+        
+    docs = db.query(KnowledgeDocument).filter(KnowledgeDocument.external_id.in_(list(ids_to_fetch))).all()
+    return {
+        d.external_id: {"external_id": d.external_id, "title": d.title, "source": d.source, "url": d.url}
         for d in docs
-    ]
+    }
+
+
+def _map_citations(id_str: str | None, lookup: dict[str, dict]) -> list[dict]:
+    """Maps a comma-separated citation string using a pre-fetched lookup dict."""
+    if not id_str:
+        return []
+    ids = [i.strip() for i in id_str.split(",") if i.strip()]
+    return [lookup[i] for i in ids if i in lookup]
 
 
 @router.get("")
 def list_reviews(
     repo: str | None = None,
-    db: Session = Depends(get_db),  # noqa: B008
-    user: dict = Depends(get_current_user),  # noqa: B008
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
 ) -> list[dict]:
     """Reviews newest-first, with enough summary data for a list view without N+1 detail fetches."""
     installations = user.get("installations", [])
@@ -63,7 +69,10 @@ def list_reviews(
         .join(PullRequest.repository)
         .join(Repository.installation)
         .filter(Installation.github_installation_id.in_(installations))
-        .options(joinedload(Review.pull_request).joinedload(PullRequest.repository))
+        .options(
+            joinedload(Review.pull_request).joinedload(PullRequest.repository),
+            selectinload(Review.findings)
+        )
     )
     
     if repo:
@@ -93,8 +102,8 @@ def list_reviews(
 @router.get("/{review_id}")
 def get_review(
     review_id: str, 
-    db: Session = Depends(get_db),  # noqa: B008
-    user: dict = Depends(get_current_user),  # noqa: B008
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
 ) -> dict:
     review = db.get(Review, review_id)
     if review is None:
@@ -108,6 +117,15 @@ def get_review(
     if not repo or not repo.installation or repo.installation.github_installation_id not in installations:
         raise HTTPException(status_code=403, detail="Not authorized to view this review")
 
+    # Collect all citation IDs upfront to avoid N+1 queries
+    all_citation_strings = []
+    for f in review.findings:
+        all_citation_strings.append(f.cited_document_ids)
+        for p in f.patch_suggestions:
+            all_citation_strings.append(p.cited_document_ids)
+            
+    citations_lookup = _resolve_all_citations(db, all_citation_strings)
+
     return {
         "id": review.id,
         "status": review.status,
@@ -116,7 +134,7 @@ def get_review(
         "pr_title": pr.title if pr else None,
         "started_at": review.started_at,
         "completed_at": review.completed_at,
-            "error_message": review.error_message,
+        "error_message": review.error_message,
         "total_cost_usd": review.total_cost_usd,
         "total_latency_ms": review.total_latency_ms,
         "finding_count": len(review.findings),
@@ -134,13 +152,13 @@ def get_review(
                 "source": f.source,
                 "explanation": f.explanation,
                 "code_snippet": f.code_snippet,
-                "citations": _resolve_citations(db, f.cited_document_ids),
+                "citations": _map_citations(f.cited_document_ids, citations_lookup),
                 "patch_suggestions": [
                     {
                         "id": p.id,
                         "diff": p.diff,
                         "reasoning": p.reasoning,
-                        "citations": _resolve_citations(db, p.cited_document_ids),
+                        "citations": _map_citations(p.cited_document_ids, citations_lookup),
                         "verification_runs": [
                             {
                                 "id": v.id,
@@ -166,8 +184,8 @@ def get_review(
 def get_finding_patch(
     review_id: str,
     finding_id: str,
-    db: Session = Depends(get_db),  # noqa: B008
-    user: dict = Depends(get_current_user),  # noqa: B008
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
 ) -> dict:
     review = db.get(Review, review_id)
     if review is None:
@@ -185,13 +203,17 @@ def get_finding_patch(
     if not finding:
         raise HTTPException(status_code=404, detail="Finding not found")
 
+    # Collect citation IDs for this finding's patches
+    all_citation_strings = [p.cited_document_ids for p in finding.patch_suggestions]
+    citations_lookup = _resolve_all_citations(db, all_citation_strings)
+
     return {
         "patch_suggestions": [
             {
                 "id": p.id,
                 "diff": p.diff,
                 "reasoning": p.reasoning,
-                "citations": _resolve_citations(db, p.cited_document_ids),
+                "citations": _map_citations(p.cited_document_ids, citations_lookup),
                 "verification_runs": [
                     {
                         "id": v.id,
@@ -213,9 +235,9 @@ def get_finding_patch(
 @router.post("/{review_id}/rerun")
 def rerun_review(
     review_id: str, 
-    db: Session = Depends(get_db),  # noqa: B008
-    queue=Depends(get_review_queue),  # noqa: B008
-    user: dict = Depends(get_current_user),  # noqa: B008
+    db: Session = Depends(get_db),
+    queue=Depends(get_review_queue),
+    user: dict = Depends(get_current_user),
 ) -> dict:
     """
     Creates a fresh Review row for the same pull request and enqueues it --
