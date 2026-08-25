@@ -91,7 +91,7 @@ class BanditAnalyzer:
         with tempfile.TemporaryDirectory() as tmpdir:
             temp_to_original = _write_files_to_tempdir(tmpdir, files)
 
-            proc = subprocess.run(  # noqa: PLW1510
+            proc = subprocess.run(
                 ["bandit", "-f", "json", "-q", "-r", tmpdir],
                 capture_output=True,
                 text=True,
@@ -149,7 +149,7 @@ class MockStaticAnalyzer:
     work correctly.
     """
 
-    _KEYWORD_TO_CWE = {  # noqa: RUF012
+    _KEYWORD_TO_CWE = {
         "shell=True": "CWE-78",
         "cursor.execute": "CWE-89",
         "pickle.loads": "CWE-502",
@@ -220,7 +220,7 @@ class SemgrepAnalyzer:
         with tempfile.TemporaryDirectory() as tmpdir:
             temp_to_original = _write_files_to_tempdir(tmpdir, files)
 
-            proc = subprocess.run(  # noqa: PLW1510
+            proc = subprocess.run(
                 [
                     "semgrep", "scan",
                     "--config", str(self.rules_path),

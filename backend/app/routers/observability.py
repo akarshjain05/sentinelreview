@@ -9,7 +9,7 @@ written on every real pipeline run) but was previously invisible -- no
 endpoint ever exposed it. This is that endpoint.
 """
 from fastapi import APIRouter, Depends
-from sqlalchemy import func
+from sqlalchemy import func, Integer
 from sqlalchemy.orm import Session
 
 from app.auth.oauth import get_current_user
@@ -36,8 +36,8 @@ _PIPELINE_ORDER = [agent.value for agent in _NODE_TO_AGENT_NAME.values()]
 
 @router.get("/latency")
 def get_latency_stats(
-    db: Session = Depends(get_db),  # noqa: B008
-    user: dict = Depends(get_current_user),  # noqa: B008
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
 ) -> dict:
     installation_ids = user.get("installations", [])
     if not installation_ids:
@@ -52,6 +52,7 @@ def get_latency_stats(
         db.query(
             AgentRun.agent_name,
             func.count(AgentRun.id).label("run_count"),
+            func.sum(func.cast(AgentRun.succeeded, Integer)).label("succeeded_count"),
             func.avg(AgentRun.latency_ms).label("avg_latency_ms"),
             func.min(AgentRun.latency_ms).label("min_latency_ms"),
             func.max(AgentRun.latency_ms).label("max_latency_ms"),
@@ -66,17 +67,8 @@ def get_latency_stats(
     )
 
     per_agent_stats = []
-    for agent_name, run_count, avg_latency, min_latency, max_latency in per_agent:
-        succeeded_count = (
-            db.query(func.count(AgentRun.id))
-            .join(Review, AgentRun.review_id == Review.id)
-            .join(PullRequest, Review.pull_request_id == PullRequest.id)
-            .join(Repository, PullRequest.repository_id == Repository.id)
-            .join(Installation, Repository.installation_id == Installation.id)
-            .filter(Installation.github_installation_id.in_(installation_ids))
-            .filter(AgentRun.agent_name == agent_name, AgentRun.succeeded.is_(True))
-            .scalar()
-        )
+    for agent_name, run_count, succeeded_count, avg_latency, min_latency, max_latency in per_agent:
+        succeeded_count = succeeded_count or 0
         per_agent_stats.append({
             "agent_name": agent_name,
             "run_count": run_count,
@@ -127,8 +119,8 @@ def get_latency_stats(
 
 @router.get("/dashboard")
 def get_dashboard_stats(
-    db: Session = Depends(get_db),  # noqa: B008
-    user: dict = Depends(get_current_user),  # noqa: B008
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
 ) -> dict:
     installation_ids = user.get("installations", [])
     if not installation_ids:

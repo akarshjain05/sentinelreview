@@ -29,7 +29,7 @@ class KnowledgeSnippet(BaseModel):
     relevance_score: float = 0.0
 
 
-class Finding(BaseModel):
+class PipelineFinding(BaseModel):
     file_path: str
     start_line: int
     end_line: int
@@ -83,13 +83,13 @@ class ReviewState(BaseModel):
     skipped_files: list[str] = Field(default_factory=list)
 
     # Static analysis output
-    raw_analyzer_findings: list[Finding] = Field(default_factory=list)
+    raw_analyzer_findings: list[PipelineFinding] = Field(default_factory=list)
 
     # Retrieval output
     retrieved_knowledge: list[KnowledgeSnippet] = Field(default_factory=list)
 
     # Classification output (merges/refines raw_analyzer_findings)
-    findings: list[Finding] = Field(default_factory=list)
+    findings: list[PipelineFinding] = Field(default_factory=list)
 
     # Fix suggestion output
     patch_suggestions: list[PatchSuggestion] = Field(default_factory=list)
@@ -103,6 +103,5 @@ class ReviewState(BaseModel):
     # Observability / safety
     security_flags: list[SecurityFlag] = Field(default_factory=list)
     errors: list[str] = Field(default_factory=list)
-    retry_counts: dict[str, int] = Field(default_factory=dict)
     tokens_used: int = 0
     cost_usd: float = 0.0

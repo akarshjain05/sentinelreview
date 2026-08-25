@@ -71,7 +71,7 @@ def test_get_dashboard_stats(client: TestClient, db_session: Session):
     db_session.add(pr)
     db_session.flush()
 
-    dt = datetime(2026, 7, 20, 12, 0, 0)  # noqa: DTZ001
+    dt = datetime(2026, 7, 20, 12, 0, 0)
     
     rev = Review(
         id="rev_1",

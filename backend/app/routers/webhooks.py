@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 """
 GitHub App webhook receiver.
 
@@ -177,11 +180,18 @@ def _handle_pull_request_event(payload: dict, db: Session, queue) -> dict:
     # comment. Done here (synchronously, before enqueueing the actual
     # pipeline run) so a misconfigured App fails fast and visibly on the
     # very next webhook, rather than silently inside a background job.
+    # We use a strict 2-second timeout so this best-effort pre-check
+    # never blocks GitHub's webhook delivery from acking.
     installation_id = payload["installation"]["id"]
+    import httpx
     try:
-        token = get_installation_token(installation_id)
+        with httpx.Client(timeout=2.0) as client:
+            token = get_installation_token(installation_id, client=client)
         auth_status = "installation_token_acquired"
         token_expires_at = token.expires_at
+    except httpx.TimeoutException:
+        auth_status = "auth_check_timed_out (best effort pre-check)"
+        token_expires_at = None
     except GitHubAppAuthError as e:
         auth_status = f"auth_failed: {e}"
         token_expires_at = None
@@ -211,8 +221,8 @@ async def github_webhook(
     request: Request,
     x_hub_signature_256: str | None = Header(default=None),
     x_github_event: str | None = Header(default=None),
-    db: Session = Depends(get_db),  # noqa: B008
-    queue=Depends(get_review_queue),  # noqa: B008
+    db: Session = Depends(get_db),
+    queue=Depends(get_review_queue),
 ):
     body = await request.body()
     if not _verify_signature(body, x_hub_signature_256):
@@ -222,9 +232,9 @@ async def github_webhook(
         return {"status": "ignored", "reason": f"unhandled event type: {x_github_event}"}
 
     payload = await request.json()
-    print(f"DEBUG: Received github event {x_github_event}")
+    logger.debug(f"DEBUG: Received github event {x_github_event}")
     if x_github_event == "pull_request":
-        print(f"DEBUG: PR Action {payload.get('action')}, repo ID: {payload.get('repository', {}).get('id')}, PR number: {payload.get('pull_request', {}).get('number')}")
+        logger.debug(f"DEBUG: PR Action {payload.get('action')}, repo ID: {payload.get('repository', {}).get('id')}, PR number: {payload.get('pull_request', {}).get('number')}")
 
     if x_github_event == "installation":
         return _handle_installation_event(payload, db)

@@ -162,7 +162,7 @@ def logout():
 
 
 @router.get("/me")
-def get_me(user: dict = Depends(get_current_user)):  # noqa: B008
+def get_me(user: dict = Depends(get_current_user)):
     """Return the current user's info for the frontend to render the UI."""
     return {
         "login": user["login"],

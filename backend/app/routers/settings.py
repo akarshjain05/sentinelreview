@@ -19,7 +19,7 @@ class RepositorySettingsUpdate(BaseModel):
     min_severity_to_report: Severity | None = None
 
 @router.get("")
-def get_settings(user: dict = Depends(get_current_user), db: Session = Depends(get_db)):  # noqa: B008
+def get_settings(user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     """Fetch current user's installations and repos with their configuration states."""
     installation_ids = user.get("installations", [])
     if not installation_ids:
@@ -56,8 +56,8 @@ def get_settings(user: dict = Depends(get_current_user), db: Session = Depends(g
 def update_installation_settings(
     installation_id: str, 
     update: InstallationSettingsUpdate,
-    user: dict = Depends(get_current_user),  # noqa: B008
-    db: Session = Depends(get_db)  # noqa: B008
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     inst = db.query(Installation).filter(Installation.id == installation_id).first()
     if not inst:
@@ -81,8 +81,8 @@ def update_installation_settings(
 def update_repository_settings(
     repository_id: str, 
     update: RepositorySettingsUpdate,
-    user: dict = Depends(get_current_user),  # noqa: B008
-    db: Session = Depends(get_db)  # noqa: B008
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     repo = db.query(Repository).filter(Repository.id == repository_id).first()
     if not repo:

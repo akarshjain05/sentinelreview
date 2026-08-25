@@ -63,7 +63,7 @@ def run_in_sandbox(
         # but NOT process/network isolated. Never use this path against
         # untrusted PR content in a real deployment.
         try:
-            proc = subprocess.run(  # noqa: PLW1510
+            proc = subprocess.run(
                 command,
                 cwd=workdir_host_path,
                 capture_output=True,
@@ -88,7 +88,7 @@ def run_in_sandbox(
         *command,
     ]
     try:
-        proc = subprocess.run(docker_cmd, capture_output=True, text=True, timeout=timeout)  # noqa: PLW1510
+        proc = subprocess.run(docker_cmd, capture_output=True, text=True, timeout=timeout)
         return SandboxResult(proc.returncode, proc.stdout, proc.stderr, timed_out=False)
     except subprocess.TimeoutExpired as e:
         return SandboxResult(-1, (e.stdout.decode() if isinstance(e.stdout, bytes) else str(e.stdout or '')), (e.stderr.decode() if isinstance(e.stderr, bytes) else str(e.stderr or '')), timed_out=True)

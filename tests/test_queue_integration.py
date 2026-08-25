@@ -38,7 +38,7 @@ def real_redis_connection():
     conn = Redis.from_url(settings.redis_url)
     try:
         conn.ping()
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         pytest.fail(
             f"This test requires a real Redis at {settings.redis_url} -- "
             f"start one with `redis-server --daemonize yes`. ({e})"

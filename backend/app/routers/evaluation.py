@@ -25,7 +25,7 @@ _KNOWN_RESULT_FILES = {
 
 
 @router.get("/latest")
-def get_latest_evaluation(user: dict = Depends(get_current_user)) -> dict:  # noqa: B008
+def get_latest_evaluation(user: dict = Depends(get_current_user)) -> dict:
     """
     Returns whichever real eval result files currently exist on disk. Each
     key is present only if `python3 evaluation/run_eval.py [flags]` has

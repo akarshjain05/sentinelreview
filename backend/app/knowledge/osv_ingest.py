@@ -87,7 +87,7 @@ def fetch_advisories(
                 severity = "unknown"
                 for metric in data.get("severity", []):
                     if metric.get("type") in ["CVSS_V3", "CVSS_V2"]:
-                        score = metric.get("score", "")  # noqa: F841
+                        score = metric.get("score", "")
                         # simplistic parsing of vector to get severity if we wanted, 
                         # but OSV doesn't explicitly store baseSeverity string often.
                         # For this stub, we extract it if possible, else leave unknown.
@@ -95,7 +95,7 @@ def fetch_advisories(
                         break
                         
                 # Some OSV records have database_specific severity
-                if severity == "unknown" and "severity" in db_specific:  # noqa: SIM102
+                if severity == "unknown" and "severity" in db_specific:
                     if isinstance(db_specific["severity"], str):
                         severity = db_specific["severity"].lower()
 
