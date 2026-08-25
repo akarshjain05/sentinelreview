@@ -109,7 +109,7 @@ class PullRequest(Base):
     __table_args__ = (UniqueConstraint("repository_id", "number", name="uq_repo_pr_number"),)
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
-    repository_id: Mapped[str] = mapped_column(ForeignKey("repositories.id"))
+    repository_id: Mapped[str] = mapped_column(ForeignKey("repositories.id"), index=True)
     number: Mapped[int] = mapped_column(Integer)
     title: Mapped[str] = mapped_column(String)
     head_sha: Mapped[str] = mapped_column(String)
@@ -126,7 +126,7 @@ class Review(Base):
     __tablename__ = "reviews"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
-    pull_request_id: Mapped[str] = mapped_column(ForeignKey("pull_requests.id"))
+    pull_request_id: Mapped[str] = mapped_column(ForeignKey("pull_requests.id"), index=True)
     triggered_sha: Mapped[str] = mapped_column(String)
     status: Mapped[ReviewStatus] = mapped_column(SAEnum(ReviewStatus), default=ReviewStatus.QUEUED)
     is_manual_rerun: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -146,7 +146,7 @@ class AgentRun(Base):
     __tablename__ = "agent_runs"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
-    review_id: Mapped[str] = mapped_column(ForeignKey("reviews.id"))
+    review_id: Mapped[str] = mapped_column(ForeignKey("reviews.id"), index=True)
     agent_name: Mapped[AgentName] = mapped_column(SAEnum(AgentName))
     attempt: Mapped[int] = mapped_column(Integer, default=1)
     input_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -208,7 +208,7 @@ class Finding(Base):
     __tablename__ = "findings"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
-    review_id: Mapped[str] = mapped_column(ForeignKey("reviews.id"))
+    review_id: Mapped[str] = mapped_column(ForeignKey("reviews.id"), index=True)
     file_path: Mapped[str] = mapped_column(String)
     start_line: Mapped[int] = mapped_column(Integer)
     end_line: Mapped[int] = mapped_column(Integer)
@@ -234,7 +234,7 @@ class PatchSuggestion(Base):
     __tablename__ = "patch_suggestions"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
-    finding_id: Mapped[str] = mapped_column(ForeignKey("findings.id"))
+    finding_id: Mapped[str] = mapped_column(ForeignKey("findings.id"), index=True)
     diff: Mapped[str] = mapped_column(Text)
     reasoning: Mapped[str] = mapped_column(Text)
     cited_document_ids: Mapped[str | None] = mapped_column(String, nullable=True)  # comma-separated
@@ -248,7 +248,7 @@ class VerificationRun(Base):
     __tablename__ = "verification_runs"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
-    patch_suggestion_id: Mapped[str] = mapped_column(ForeignKey("patch_suggestions.id"))
+    patch_suggestion_id: Mapped[str] = mapped_column(ForeignKey("patch_suggestions.id"), index=True)
     issue_resolved: Mapped[bool] = mapped_column(Boolean)
     tests_passed: Mapped[bool] = mapped_column(Boolean)
     build_succeeded: Mapped[bool] = mapped_column(Boolean)
