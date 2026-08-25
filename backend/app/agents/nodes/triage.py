@@ -1,6 +1,7 @@
 from app.agents.state import ReviewState, SecurityFlag
 from app.core.config import get_settings
-from app.security.guardrails import sanitize_untrusted_text, assert_tool_allowed
+from app.security.guardrails import assert_tool_allowed, sanitize_untrusted_text
+
 
 def triage_node(state: ReviewState) -> dict:
     assert_tool_allowed("triage", "list_changed_files")

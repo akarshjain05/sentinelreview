@@ -75,7 +75,7 @@ def test_db_unique_constraint_rejects_duplicate_bypassing_upsert(db_session):
         source="ghsa", external_id="GHSA-constraint-test",
         title="B", content="y", cwe_ids=None, url=None,
     ))
-    with pytest.raises(Exception):  # IntegrityError, but the base Exception check keeps this dialect-agnostic
+    with pytest.raises(Exception):  # noqa: B017  # IntegrityError, but the base Exception check keeps this dialect-agnostic
         db_session.commit()
     db_session.rollback()
 

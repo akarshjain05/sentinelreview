@@ -1,6 +1,6 @@
-from app.agents.state import ReviewState, KnowledgeSnippet
-from app.knowledge.tfidf_index import SearchResult
+from app.agents.state import KnowledgeSnippet, ReviewState
 from app.security.guardrails import assert_tool_allowed
+
 
 def make_retrieval_node(knowledge_index):
     def retrieval_node(state: ReviewState) -> dict:

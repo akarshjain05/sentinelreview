@@ -1,6 +1,7 @@
 from app.agents.state import ReviewState, VerificationOutcome
 from app.security.guardrails import assert_tool_allowed
 
+
 def make_verification_node(static_analyzers: dict):
     def verification_node(state: ReviewState) -> dict:
         assert_tool_allowed("verification", "apply_patch_sandboxed")

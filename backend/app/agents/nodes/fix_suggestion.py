@@ -1,6 +1,8 @@
 import re
-from app.agents.state import ReviewState, PatchSuggestion
+
+from app.agents.state import PatchSuggestion, ReviewState
 from app.security.guardrails import assert_tool_allowed
+
 
 def make_fix_suggestion_node(generator):
     def fix_suggestion_node(state: ReviewState) -> dict:

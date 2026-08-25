@@ -241,8 +241,9 @@ def test_pull_request_webhook_ignores_redelivery_for_same_sha(client, db_session
     same commit SHA on the same PR (e.g. redelivery of a failed webhook, or
     just duplicate events), we should not enqueue a duplicate pipeline run.
     """
-    from app.db.models import Installation, Repository, PullRequest, Review
     import uuid
+
+    from app.db.models import Installation, PullRequest, Repository, Review
 
     # Setup installation/repo
     inst = Installation(id=str(uuid.uuid4()), github_installation_id=123, account_login="org")

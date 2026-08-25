@@ -100,7 +100,7 @@ def run_review_job(review_id: str) -> None:
                 post_pr_review_comment(owner, repo_name, pull_request.number, review_markdown, token.token)
             except GitHubAPIError as e:
                 import logging
-                logging.error(f"Failed to post comment to PR: {e}")
+                logging.getLogger(__name__).error(f"Failed to post comment to PR: {e}")
                 _fail(db, review, f"Failed to post comment to PR: {e}")
 
     finally:

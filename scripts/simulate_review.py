@@ -1,11 +1,11 @@
-import asyncio
-import uuid
 import random
-from app.agents.state import ReviewState, ChangedFile, Finding
-from app.agents.graph import build_graph
-from app.services.pipeline_runner import run_review_with_observability
+import uuid
+
+from app.agents.state import ChangedFile, ReviewState
+from app.db.models import PullRequest, Repository, Review, ReviewStatus
 from app.db.session import SessionLocal
-from app.db.models import Review, PullRequest, Repository, ReviewStatus
+from app.services.pipeline_runner import run_review_with_observability
+
 
 def run():
     print("Initializing dummy data...")
@@ -54,7 +54,7 @@ def run():
     print(f"Triggering LLM Pipeline for Review ID: {review.id} ...")
     
     try:
-        final_state = run_review_with_observability(state, db=db, review_id=review.id)
+        run_review_with_observability(state, db=db, review_id=review.id)
         
         db.refresh(review)
         print("\n--- Pipeline Completed ---")

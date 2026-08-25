@@ -1,6 +1,7 @@
 from app.agents.state import ReviewState
 from app.security.guardrails import assert_tool_allowed
 
+
 def reporting_node(state: ReviewState) -> dict:
     assert_tool_allowed("reporting", "format_review_comment")
 

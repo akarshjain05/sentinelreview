@@ -9,7 +9,7 @@ written on every real pipeline run) but was previously invisible -- no
 endpoint ever exposed it. This is that endpoint.
 """
 from fastapi import APIRouter, Depends
-from sqlalchemy import func, Integer
+from sqlalchemy import Integer, func
 from sqlalchemy.orm import Session
 
 from app.auth.oauth import get_current_user

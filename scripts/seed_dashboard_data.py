@@ -14,7 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
 
-from app.db.models import (  # noqa: E402
+from app.db.models import (
     AgentName,
     AgentRun,
     Base,
@@ -31,7 +31,7 @@ from app.db.models import (  # noqa: E402
     Severity,
     VerificationRun,
 )
-from app.db.session import SessionLocal, engine  # noqa: E402
+from app.db.session import SessionLocal, engine
 
 
 def seed() -> None:
@@ -42,7 +42,7 @@ def seed() -> None:
     for model in [VerificationRun, PatchSuggestion, EvaluationResult, AgentRun, Finding, Review, PullRequest, Repository, Installation, KnowledgeDocument, Embedding]:
         try:
             db.query(model).delete()
-        except Exception:
+        except Exception:  # noqa: S110
             pass
     db.commit()
 

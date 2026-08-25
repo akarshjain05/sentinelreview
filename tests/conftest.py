@@ -1,4 +1,5 @@
 import os
+
 os.environ["TESTING"] = "1"
 import os
 import sys
@@ -61,7 +62,6 @@ def override_auth(monkeypatch):
     
     # Clean up after test
     app.dependency_overrides.pop(get_current_user, None)
-from app.core.config import Settings
 
 @pytest.fixture(autouse=True)
 def _setup_test_env(monkeypatch):

@@ -95,7 +95,7 @@ class BanditAnalyzer:
                 ["bandit", "-f", "json", "-q", "-r", tmpdir],
                 capture_output=True,
                 text=True,
-                timeout=self.timeout_seconds,
+                timeout=self.timeout_seconds, check=False,
             )
             # Bandit exits non-zero when it finds issues -- that's expected,
             # not a failure. Only treat unparsable output as an error.
@@ -149,7 +149,8 @@ class MockStaticAnalyzer:
     work correctly.
     """
 
-    _KEYWORD_TO_CWE = {
+    from typing import ClassVar
+    _KEYWORD_TO_CWE: ClassVar[dict] = {
         "shell=True": "CWE-78",
         "cursor.execute": "CWE-89",
         "pickle.loads": "CWE-502",
@@ -230,7 +231,7 @@ class SemgrepAnalyzer:
                 ],
                 capture_output=True,
                 text=True,
-                timeout=self.timeout_seconds,
+                timeout=self.timeout_seconds, check=False,
             )
             try:
                 payload = json.loads(proc.stdout)

@@ -1,5 +1,5 @@
-from app.services.static_analysis import merge_analyzer_findings
 from app.sandbox.analyzers import RawFinding
+from app.services.static_analysis import merge_analyzer_findings
 
 
 def _rf(start_line, cwe_id, test_id="X", end_line=None):
@@ -18,7 +18,7 @@ def test_merges_findings_from_two_analyzers_agreeing_on_same_line_and_cwe():
     merged = merge_analyzer_findings(findings)
 
     assert len(merged) == 1
-    file_path, rf, analyzers = merged[0]
+    _file_path, _unused_rf, analyzers = merged[0]
     assert set(analyzers) == {"bandit", "semgrep"}
 
 

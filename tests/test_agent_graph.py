@@ -91,8 +91,8 @@ def test_pipeline_fails_cleanly_on_analyzer_error():
     Tests that a crashing static analyzer raises an exception to fail the pipeline run,
     rather than failing silently and returning 0 findings.
     """
-    from app.sandbox.analyzers import MockStaticAnalyzer
     import pytest
+    from app.sandbox.analyzers import MockStaticAnalyzer
 
     class CrashingAnalyzer(MockStaticAnalyzer):
         def analyze_files(self, files):

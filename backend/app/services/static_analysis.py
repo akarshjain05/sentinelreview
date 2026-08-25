@@ -1,5 +1,6 @@
 from app.sandbox.analyzers import RawFinding
 
+
 def merge_analyzer_findings(
     raw_findings: list[tuple[str, str, RawFinding]]
 ) -> list[tuple[str, RawFinding, list[str]]]:
@@ -17,10 +18,9 @@ def merge_analyzer_findings(
             
         matched_cluster = None
         for i, (c_file, c_rf, c_names) in enumerate(clusters):
-            if c_file == file_path and c_rf.cwe_id == rf.cwe_id:
-                if abs(rf.start_line - c_rf.start_line) <= 3:
-                    matched_cluster = i
-                    break
+            if c_file == file_path and c_rf.cwe_id == rf.cwe_id and abs(rf.start_line - c_rf.start_line) <= 3:
+                matched_cluster = i
+                break
                     
         if matched_cluster is not None:
             c_file, c_rf, c_names = clusters[matched_cluster]

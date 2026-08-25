@@ -1,6 +1,7 @@
-from app.agents.state import ReviewState, PipelineFinding
+from app.agents.state import PipelineFinding, ReviewState
 from app.security.guardrails import assert_tool_allowed
 from app.services.static_analysis import merge_analyzer_findings
+
 
 def make_static_analysis_node(static_analyzers: dict):
     def static_analysis_node(state: ReviewState) -> dict:

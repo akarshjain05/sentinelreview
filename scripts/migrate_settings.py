@@ -1,11 +1,12 @@
-import sys
 import os
+import sys
 
 # Add the parent directory to sys.path so we can import app modules
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
-from sqlalchemy import text
 from app.db.session import engine
+from sqlalchemy import text
+
 
 def migrate():
     print("Starting migration...")

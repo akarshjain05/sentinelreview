@@ -1,18 +1,20 @@
 import functools
 from typing import Any
+
 from langgraph.graph import END, StateGraph
 
-from app.agents.state import ReviewState
-from app.agents.nodes.triage import triage_node
-from app.agents.nodes.static_analysis import make_static_analysis_node
-from app.agents.nodes.retrieval import make_retrieval_node
 from app.agents.nodes.classification import make_classification_node
 from app.agents.nodes.fix_suggestion import make_fix_suggestion_node
-from app.agents.nodes.verification import make_verification_node
 from app.agents.nodes.reporting import reporting_node
+from app.agents.nodes.retrieval import make_retrieval_node
+from app.agents.nodes.static_analysis import make_static_analysis_node
+from app.agents.nodes.triage import triage_node
+from app.agents.nodes.verification import make_verification_node
+from app.agents.state import ReviewState
 from app.core.config import get_settings
 from app.knowledge.tfidf_index import TfidfKnowledgeIndex
 from app.services.static_analysis import get_default_analyzers
+
 
 @functools.lru_cache(maxsize=1)
 def get_cached_knowledge_index():
@@ -28,10 +30,10 @@ def build_graph(
     Constructs the LangGraph state machine. Nodes are extracted into app.agents.nodes.*.
     """
     from app.agents.model_clients import (
-        LiteLLMClient,
         LiteLLMClassifier,
-        MockZeroShotClassifier,
+        LiteLLMClient,
         MockGenerationClient,
+        MockZeroShotClassifier,
     )
 
     settings = get_settings()

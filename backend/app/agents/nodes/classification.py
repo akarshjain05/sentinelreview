@@ -1,4 +1,4 @@
-from app.agents.state import ReviewState, PipelineFinding
+from app.agents.state import PipelineFinding, ReviewState
 from app.security.guardrails import assert_tool_allowed
 
 CWE_CANDIDATE_LABELS = [

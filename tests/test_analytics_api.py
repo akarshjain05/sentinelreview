@@ -71,7 +71,8 @@ def test_get_dashboard_stats(client: TestClient, db_session: Session):
     db_session.add(pr)
     db_session.flush()
 
-    dt = datetime(2026, 7, 20, 12, 0, 0)
+    from datetime import timezone
+    dt = datetime(2026, 7, 20, 12, 0, 0, tzinfo=timezone.utc)
     
     rev = Review(
         id="rev_1",
