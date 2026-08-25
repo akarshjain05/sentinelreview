@@ -132,7 +132,7 @@ def merge_analyzer_findings(
                 cluster = []
             cluster.append((analyzer_name, rf))
         if cluster:
-            rep_analyzer, rep_finding = cluster[0]  # noqa: RUF059
+            rep_analyzer, rep_finding = cluster[0]
             merged.append((file_path, rep_finding, [a for a, _ in cluster]))
 
     return merged + unmatchable
@@ -238,7 +238,7 @@ def build_graph(
             for analyzer_name, analyzer in static_analyzers.items():
                 try:
                     results_by_file = analyzer.analyze_files(files_to_scan)
-                except Exception as e:  # noqa: BLE001 - one analyzer's failure shouldn't kill the whole review or block the other analyzer
+                except Exception as e:
                     results_by_file = {}
                     # In production this would be logged to AgentRun.error_message, not swallowed silently.
                     _ = e
@@ -445,7 +445,7 @@ def build_graph(
                         else:
                             introduced_new_findings = True
                             log_output += f"{analyzer_name} found new issues in patched code.\n"
-                except Exception as e:  # noqa: BLE001
+                except Exception as e:
                     issue_resolved = False
                     log_output += f"Analyzer {analyzer_name} failed: {e}\n"
             
@@ -453,10 +453,10 @@ def build_graph(
                 VerificationOutcome(
                     patch_index=idx,
                     issue_resolved=issue_resolved,
-                    tests_passed=True,  # Test execution is out of scope for pure static verification
-                    build_succeeded=True,
+                    tests_passed=False,  # Sandboxed execution not yet implemented
+                    build_succeeded=False, # Sandboxed build not yet implemented
                     introduced_new_findings=introduced_new_findings,
-                    log=log_output or "Patch verified successfully.",
+                    log=log_output or "Static verification passed. Dynamic sandboxed verification not yet implemented.",
                 )
             )
         return {"verification_outcomes": outcomes}
