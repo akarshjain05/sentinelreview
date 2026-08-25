@@ -62,9 +62,11 @@ def run_review_with_observability(
     total_cost_usd = 0.0
 
     try:
-        start = time.perf_counter()
+        last = time.perf_counter()
         for step_output in graph.stream(state):
-            latency_ms = int((time.perf_counter() - start) * 1000)
+            now = time.perf_counter()
+            latency_ms = int((now - last) * 1000)
+            last = now
             
             # step_output looks like {"<node_name>": {<partial state update>}}
             for node_name, partial_update in step_output.items():
@@ -87,8 +89,6 @@ def run_review_with_observability(
                 total_latency_ms += latency_ms
                 total_cost_usd += partial_update.get("cost_usd", 0.0)
                 final_state.update(partial_update)
-            
-            start = time.perf_counter()
         db.commit()
 
         # This was a real, previously-hidden gap: findings only ever lived
