@@ -36,6 +36,17 @@ SentinelReview relies on several integrated services:
 
 ---
 
+
+## 🗂️ Project Structure
+
+The codebase is organized for clean separation of concerns and easy extensibility:
+
+- **`backend/app/agents/`**: Contains the core LangGraph architecture.
+  - **`nodes/`**: Individual agent modules (`triage.py`, `static_analysis.py`, `classification.py`, `retrieval.py`, `fix_suggestion.py`, `verification.py`, `reporting.py`). Extracted for easy testing and modification.
+  - **`graph.py`**: The main entry point that wires all node closures together.
+- **`backend/app/services/`**: Core business logic (e.g., `pipeline_runner.py` for executing the graph, `static_analysis.py` for executing external analyzers).
+- **`backend/app/sandbox/`**: Isolated environment for verifying LLM-generated patches securely.
+
 ## 🛠️ Prerequisites
 
 Before you start, ensure you have the following installed:
@@ -69,7 +80,7 @@ SESSION_SECRET_KEY="your-super-secret-random-32-byte-string"
 # LLM Provider (Provide AT LEAST ONE of these)
 ANTHROPIC_API_KEY="sk-ant-..."
 # OPENAI_API_KEY="sk-..."
-# NVIDIA_API_KEY="nvapi-..."
+# NVIDIA_NIM_API_KEY="nvapi-..."  # (Preferred for NIM endpoints)
 # GEMINI_API_KEY="AIza..."
 
 # GitHub App Integration (See step 3 below)
@@ -85,7 +96,7 @@ GITHUB_CLIENT_SECRET="your_oauth_client_secret"
 ### 3. Setup GitHub App & Webhooks
 To allow SentinelReview to listen to PRs and post reviews:
 1. Go to **Settings → Developer settings → GitHub Apps → New GitHub App**.
-2. **Webhook URL**: You need a publicly accessible URL forwarding to `http://localhost:8010/webhooks/github` (e.g., using `ngrok http 8010` or `smee.io`).
+2. **Webhook URL**: You need a publicly accessible URL forwarding to `http://localhost:8010/webhooks/github` (e.g., using `smee-client` like `smee --url https://smee.io/your_channel --target http://localhost:8010/webhooks/github`).
 3. **Webhook Secret**: Generate a random secret and put it in your `.env`.
 4. **Permissions**: 
    - Repository: `Pull requests` (Read & write), `Contents` (Read-only)
