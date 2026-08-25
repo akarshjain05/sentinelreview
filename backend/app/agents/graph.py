@@ -239,9 +239,7 @@ def build_graph(
                 try:
                     results_by_file = analyzer.analyze_files(files_to_scan)
                 except Exception as e:
-                    results_by_file = {}
-                    # In production this would be logged to AgentRun.error_message, not swallowed silently.
-                    _ = e
+                    raise RuntimeError(f"Static analyzer '{analyzer_name}' failed to run: {e}") from e
                 for file_path, raw_findings in results_by_file.items():
                     for rf in raw_findings:
                         raw_by_analyzer.append((analyzer_name, file_path, rf))
@@ -467,12 +465,14 @@ def build_graph(
         lines = ["## SentinelReview — Automated Security Review\n"]
         if not state.findings:
             lines.append("No security findings detected in the reviewed files.")
+        outcomes_by_finding = {
+            state.patch_suggestions[v.patch_index].finding_index: v
+            for v in state.verification_outcomes
+            if v.patch_index < len(state.patch_suggestions)
+        }
+
         for i, finding in enumerate(state.findings):
-            verified = next(
-                (v for v in state.verification_outcomes
-                 if any(p.finding_index == i for p in [state.patch_suggestions[v.patch_index]] if v.patch_index < len(state.patch_suggestions))),
-                None,
-            )
+            verified = outcomes_by_finding.get(i)
             lines.append(f"### {finding.severity.upper()}: {finding.vulnerability_type} in `{finding.file_path}`")
             lines.append(f"Lines {finding.start_line}-{finding.end_line} | Confidence: {finding.confidence:.2f}")
             lines.append(finding.explanation)

@@ -99,10 +99,9 @@ def run_review_job(review_id: str) -> None:
                 from app.services.github_client import post_pr_review_comment
                 post_pr_review_comment(owner, repo_name, pull_request.number, review_markdown, token.token)
             except GitHubAPIError as e:
-                # We won't fail the whole review if only the comment posting failed, 
-                # but we could log it or store the error message.
                 import logging
-                logging.error(f"Failed to post comment to PR: {e}")  # noqa: LOG015
+                logging.error(f"Failed to post comment to PR: {e}")
+                _fail(db, review, f"Failed to post comment to PR: {e}")
 
     finally:
         db.close()
