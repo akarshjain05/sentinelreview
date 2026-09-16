@@ -21,3 +21,6 @@ evaluation/results*.json
 # from the repo root instead of frontend/)
 frontend/node_modules/
 frontend/dist/
+
+# macOS
+.DS_Store

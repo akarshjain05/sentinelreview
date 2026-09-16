@@ -66,14 +66,7 @@ export function Layout({ children }: { children: ReactNode }) {
                   </button>
                 </form>
               </>
-            ) : (
-              <a 
-                href={`${api.baseUrl}/auth/login/github`}
-                className="rounded bg-[var(--color-text)] px-4 py-1.5 text-sm font-semibold text-[var(--color-bg)] transition hover:opacity-90 inline-block"
-              >
-                Log in
-              </a>
-            )}
+            ) : null}
           </nav>
         </div>
       </header>
